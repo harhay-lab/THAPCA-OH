@@ -341,6 +341,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
              linetype = 1)
 
 # Combine figures
+# Both figures exported as landscape PDFs with 5 in x 10 in dimensions
 ggarrange(fig1, fig3, ncol = 2)
 ggarrange(fig2, fig4, ncol = 2)
 
