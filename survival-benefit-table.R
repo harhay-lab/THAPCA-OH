@@ -46,7 +46,7 @@ getPriorSD <- function(priormean = 0,
 # First do analysis on risk difference scale
 
 # Optimistic priors
-# Strong optimistic prior (SD = 0.245)
+# Strong optimistic prior
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
                     priormean = 0.1)
 so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
@@ -193,7 +193,7 @@ sp0.05 <- mean(posteriors_sp$Trt > 0.05)
 sp0.10 <- mean(posteriors_sp$Trt > 0.1)
 sp0.15 <- mean(posteriors_sp$Trt > 0.15)
 
-# Moderate neutral prior
+# Moderate pessimistic prior
 mp_sd <- mo_sd
 mp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
@@ -213,7 +213,7 @@ mp0.05 <- mean(posteriors_mp$Trt > 0.05)
 mp0.10 <- mean(posteriors_mp$Trt > 0.1)
 mp0.15 <- mean(posteriors_mp$Trt > 0.15)
 
-# Weak neutral prior
+# Weak pessimistic prior
 wp_sd <- wo_sd
 wp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
