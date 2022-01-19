@@ -870,7 +870,7 @@ f_labels <-
                                       quantile(posteriors_mp$exptrt,
                                                        0.975)), ")")))
 
-# Make figure for RD scale
+# Make figure for RR scale
 plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
