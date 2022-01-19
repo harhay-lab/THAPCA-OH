@@ -10,6 +10,7 @@ library(broom)
 library(parameters)
 library(sanon)
 library(rstanarm)
+library(officer)
 
 # Load trial data
 dat <- read.csv("../outcomes.csv")
@@ -47,12 +48,13 @@ getPriorSD <- function(priormean = 0,
 
 # Optimistic priors
 # Strong optimistic prior
+o_mean <- 0.05
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
-                    priormean = 0.1)
+                    priormean = o_mean)
 so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0.1, 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(so_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_so <- insight::get_parameters(so_mod)
@@ -69,11 +71,11 @@ so0.15 <- mean(posteriors_so$Trt > 0.15)
 
 # Moderate optimistic prior
 mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
-                    priormean = 0.1)
+                    priormean = o_mean)
 mo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0.1, 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(mo_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_mo <- insight::get_parameters(mo_mod)
@@ -90,11 +92,11 @@ mo0.15 <- mean(posteriors_mo$Trt > 0.15)
 
 # Weak optimistic prior
 wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
-                    priormean = 0.1)
+                    priormean = o_mean)
 wo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0.1, 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(wo_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_wo <- insight::get_parameters(wo_mod)
@@ -174,11 +176,12 @@ wn0.15 <- mean(posteriors_wn$Trt > 0.15)
 
 # Pessimistic priors
 # Strong pessimistic prior
+p_mean <- -0.05
 sp_sd <- so_sd
 sp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(-0.1, 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(sp_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_sp <- insight::get_parameters(sp_mod)
@@ -198,7 +201,7 @@ mp_sd <- mo_sd
 mp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(mp_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_mp <- insight::get_parameters(mp_mod)
@@ -218,7 +221,7 @@ wp_sd <- wo_sd
 wp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(wp_sd, 100)),
                    family = gaussian(link = "identity"), seed = 1234)
 posteriors_wp <- insight::get_parameters(wp_mod)
@@ -288,9 +291,9 @@ ft <- width(ft, j = 3, width = 1.5)
 
 # Export table to Word
 read_docx() %>% 
-  body_add_par("Table 2 (RD Scale)") %>% 
+  body_add_par("Benefit Table (RD Scale)") %>% 
   body_add_flextable(value = ft) %>% 
-  print(target = "example_table_word.docx")
+  print(target = "benefit_table_RD.docx")
 
 
 #######################################################################
@@ -298,12 +301,13 @@ read_docx() %>%
 
 # Optimistic priors
 # Strong optimistic prior
+o_mean <- log(1.25)
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
-                    priormean = log(1.25))
+                    priormean = o_mean)
 so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1.25), 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(so_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_so <- insight::get_parameters(so_mod)
@@ -320,11 +324,11 @@ so2.00 <- mean(exp(posteriors_so$Trt) > 2)
 
 # Moderate optimistic prior
 mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
-                    priormean = log(1.25))
+                    priormean = o_mean)
 mo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1.25), 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(mo_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_mo <- insight::get_parameters(mo_mod)
@@ -341,11 +345,11 @@ mo2.00 <- mean(exp(posteriors_mo$Trt) > 2)
 
 # Weak optimistic prior
 wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
-                    priormean = log(1.25))
+                    priormean = o_mean)
 wo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1.25), 0),
+                   prior = normal(location = c(o_mean, 0),
                                   scale = c(wo_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_wo <- insight::get_parameters(wo_mod)
@@ -422,11 +426,12 @@ wn2.00 <- mean(exp(posteriors_wn$Trt) > 2)
 
 # Pessimistic priors
 # Strong pessimistic prior
+p_mean <- log(1/1.25)
 sp_sd <- so_sd
 sp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1/1.25), 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(sp_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_sp <- insight::get_parameters(sp_mod)
@@ -446,7 +451,7 @@ mp_sd <- mo_sd
 mp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1/1.25), 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(mp_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_mp <- insight::get_parameters(mp_mod)
@@ -466,7 +471,7 @@ wp_sd <- wo_sd
 wp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
                    prior_intercept = normal(0, 100),
-                   prior = normal(location = c(log(1/1.25), 0),
+                   prior = normal(location = c(p_mean, 0),
                                   scale = c(wp_sd, 100)),
                    family = binomial(link = "log"), seed = 1234)
 posteriors_wp <- insight::get_parameters(wp_mod)
@@ -536,6 +541,6 @@ ft2 <- width(ft2, j = 3, width = 1.5)
 
 # Export table to Word
 read_docx() %>% 
-  body_add_par("Table 2 (RD Scale)") %>% 
-  body_add_flextable(value = ft) %>% 
-  print(target = "example_table_word.docx")
+  body_add_par("Benefit Table (RR Scale)") %>% 
+  body_add_flextable(value = ft2) %>% 
+  print(target = "benefit_table_RR.docx")
