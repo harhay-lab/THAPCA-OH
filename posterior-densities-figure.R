@@ -38,7 +38,7 @@ getPriorSD <- function(priormean = 0,
 
 # Optimistic priors
 # Strong optimistic prior
-o_mean <- 0.1
+o_mean <- 0.05
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
                     priormean = o_mean)
 so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
@@ -106,7 +106,7 @@ posteriors_wn <- insight::get_parameters(wn_mod)
 
 # Pessimistic priors
 # Strong pessimistic prior
-p_mean <- -0.1
+p_mean <- -0.05
 sp_sd <- so_sd
 sp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
                    data = dat_primary,
@@ -558,7 +558,7 @@ plot_data_sn <- p$data[[1]][, c(1, 2)]
 plot_data_sn$Distribution <- "Posterior"
 
 plot_data_sn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_sn2$y <- dlnorm(plot_data_sn2$x, 0, sn_sd)
+plot_data_sn2$y <- dnorm(log(plot_data_sn2$x), 0, sn_sd)
 plot_data_sn2$Distribution <- "Prior"
 
 plot_data_sn <- rbind(plot_data_sn, plot_data_sn2)
@@ -582,7 +582,7 @@ plot_data_mn <- p$data[[1]][, c(1, 2)]
 plot_data_mn$Distribution <- "Posterior"
 
 plot_data_mn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mn2$y <- dlnorm(plot_data_mn2$x, 0, mn_sd)
+plot_data_mn2$y <- dnorm(log(plot_data_mn2$x), 0, mn_sd)
 plot_data_mn2$Distribution <- "Prior"
 
 plot_data_mn <- rbind(plot_data_mn, plot_data_mn2)
@@ -606,7 +606,7 @@ plot_data_wn <- p$data[[1]][, c(1, 2)]
 plot_data_wn$Distribution <- "Posterior"
 
 plot_data_wn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wn2$y <- dlnorm(plot_data_wn2$x, 0, wn_sd)
+plot_data_wn2$y <- dnorm(log(plot_data_wn2$x), 0, wn_sd)
 plot_data_wn2$Distribution <- "Prior"
 
 plot_data_wn <- rbind(plot_data_wn, plot_data_wn2)
@@ -630,7 +630,7 @@ plot_data_so <- p$data[[1]][, c(1, 2)]
 plot_data_so$Distribution <- "Posterior"
 
 plot_data_so2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_so2$y <- dlnorm(plot_data_so2$x, o_mean, so_sd)
+plot_data_so2$y <- dnorm(log(plot_data_so2$x), o_mean, so_sd)
 plot_data_so2$Distribution <- "Prior"
 
 plot_data_so <- rbind(plot_data_so, plot_data_so2)
@@ -654,7 +654,7 @@ plot_data_mo <- p$data[[1]][, c(1, 2)]
 plot_data_mo$Distribution <- "Posterior"
 
 plot_data_mo2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mo2$y <- dlnorm(plot_data_mo2$x, o_mean, mo_sd)
+plot_data_mo2$y <- dnorm(log(plot_data_mo2$x), o_mean, mo_sd)
 plot_data_mo2$Distribution <- "Prior"
 
 plot_data_mo <- rbind(plot_data_mo, plot_data_mo2)
@@ -678,7 +678,7 @@ plot_data_wo <- p$data[[1]][, c(1, 2)]
 plot_data_wo$Distribution <- "Posterior"
 
 plot_data_wo2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wo2$y <- dlnorm(plot_data_wo2$x, o_mean, wo_sd)
+plot_data_wo2$y <- dnorm(log(plot_data_wo2$x), o_mean, wo_sd)
 plot_data_wo2$Distribution <- "Prior"
 
 plot_data_wo <- rbind(plot_data_wo, plot_data_wo2)
@@ -702,7 +702,7 @@ plot_data_sp <- p$data[[1]][, c(1, 2)]
 plot_data_sp$Distribution <- "Posterior"
 
 plot_data_sp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_sp2$y <- dlnorm(plot_data_sp2$x, p_mean, sp_sd)
+plot_data_sp2$y <- dnorm(log(plot_data_sp2$x), p_mean, sp_sd)
 plot_data_sp2$Distribution <- "Prior"
 
 plot_data_sp <- rbind(plot_data_sp, plot_data_sp2)
@@ -726,7 +726,7 @@ plot_data_mp <- p$data[[1]][, c(1, 2)]
 plot_data_mp$Distribution <- "Posterior"
 
 plot_data_mp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mp2$y <- dlnorm(plot_data_mp2$x, p_mean, mp_sd)
+plot_data_mp2$y <- dnorm(log(plot_data_mp2$x), p_mean, mp_sd)
 plot_data_mp2$Distribution <- "Prior"
 
 plot_data_mp <- rbind(plot_data_mp, plot_data_mp2)
@@ -750,7 +750,7 @@ plot_data_wp <- p$data[[1]][, c(1, 2)]
 plot_data_wp$Distribution <- "Posterior"
 
 plot_data_wp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wp2$y <- dlnorm(plot_data_wp2$x, p_mean, wp_sd)
+plot_data_wp2$y <- dnorm(log(plot_data_wp2$x), p_mean, wp_sd)
 plot_data_wp2$Distribution <- "Prior"
 
 plot_data_wp <- rbind(plot_data_wp, plot_data_wp2)
@@ -875,12 +875,12 @@ plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
   facet_grid(belief ~ strength, scales = "free") +
-  labs(x = "Risk Difference", y = "Density") +
+  labs(x = "Relative Risk", y = "Density") +
   scale_x_continuous(trans = "log", labels = seq(0.5, 3, by = 0.5),
                      breaks = seq(0.5, 3, by = 0.5)) +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(0.33, 3),
-                  ylim = c(0, 4)) +
+  coord_cartesian(xlim = c(0.33, 3.4),
+                  ylim = c(0, 3.75)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
