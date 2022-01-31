@@ -43,24 +43,25 @@ summary(sanon(DeltaVabs ~ grp(TreatRand) + strt(AgeGroup),
 # Flat prior analysis
 # SD = 100 ensures that the prior is uninformative
 dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
-thapca_flat <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                        data = dat_primary,
-                        prior_intercept = normal(0, 100),
-                        prior = normal(location = c(0, 0),
-                                       scale = c(100, 100)),
-                        family = binomial(link = "log"), seed = 1234)
+flat_prior <- prior(normal(0, 1000), class = "b")
+thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeGroup, data = dat_primary,
+                   prior = flat_prior, family = "bernoulli", seed = 1234)
 
-posteriors <- insight::get_parameters(thapca_flat, iterations = 10^5)
+pred1 <- posterior_epred(thapca_flat,
+                         newdata = mutate(thapca_flat$data, Trt = 1))
+
+pred0 <- posterior_epred(thapca_flat,
+                         newdata = mutate(thapca_flat$data, Trt = 0))
+
+ratio <- apply(pred1, 1, mean) / apply(pred0, 1, mean)
 
 # Some summaries used for plot legend
-any_harm <- sum(exp(posteriors$Trt) < 1) / nrow(posteriors)
-severe_harm <- sum(exp(posteriors$Trt) < 1/1.25) / nrow(posteriors)
-rope <- sum(exp(posteriors$Trt) < 1.05 & exp(posteriors$Trt) > 1/1.05) /
-  nrow(posteriors)
+any_harm <- sum(ratio < 1) / length(ratio)
+severe_harm <- sum(ratio < 1/1.25) / length(ratio)
+rope <- sum(ratio < 1.05 & ratio > 1/1.05) / length(ratio)
 
 # First figure panel
-posteriors$exptrt <- exp(posteriors$Trt)
-temp_plot <- ggplot(posteriors, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio), aes(x = ratio)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
@@ -70,7 +71,7 @@ plot_data$barriers[plot_data$x < 1/1.25] <- 2
 
 fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Relative Risk", y = "") +
+  labs(x = "Relative Risk", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(0.5, 4, by = 0.5),
                      breaks = seq(0.5, 4, by = 0.5)) +
@@ -91,7 +92,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 3, 6, 8), ],
+                   c(1, 3, 9, 11), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 3.2, y = 0.9, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -117,24 +118,15 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 #######################################################################
 # Primary outcome on RD scale
-thapca_flat2 <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                         data = dat_primary,
-                         prior_intercept = normal(0, 100),
-                         prior = normal(location = c(0, 0),
-                                        scale = c(100, 100)),
-                         family = gaussian(link = "identity"),
-                         seed = 1234)
-
-posteriors <- insight::get_parameters(thapca_flat2, iterations = 10^5)
+diff <- apply(pred1, 1, mean) - apply(pred0, 1, mean)
 
 # Some summaries used for plot legend
-any_harm <- sum(posteriors$Trt < 0) / nrow(posteriors)
-severe_harm <- sum(posteriors$Trt < -0.05) / nrow(posteriors)
-rope <- sum(posteriors$Trt < 0.01 & posteriors$Trt > -0.01) /
-  nrow(posteriors)
+any_harm <- sum(diff < 0) / length(diff)
+severe_harm <- sum(diff < -0.05) / length(diff)
+rope <- sum(diff < 0.01 & diff > -0.01) / length(diff)
 
 # Second figure panel
-temp_plot <- ggplot(posteriors, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
@@ -144,7 +136,7 @@ plot_data$barriers[plot_data$x < -0.05] <- 2
 
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Risk Difference", y = "") +
+  labs(x = "Risk Difference", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(-0.1, 0.2, by = 0.05),
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
@@ -165,7 +157,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > -0.01 & x < 0.01)[
-                   c(1, 9, 24, 32), ],
+                   c(1, 9, 23, 31), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -194,24 +186,25 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 # Flat prior
 dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
-thapca_flat3 <- stan_glm(SurviveM12 ~ Trt + AgeGroup,
-                         data = dat_secondary1,
-                         prior_intercept = normal(0, 100),
-                         prior = normal(location = c(0, 0),
-                                        scale = c(100, 100)),
-                         family = binomial(link = "log"), seed = 1234)
+thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeGroup, data = dat_primary,
+                    prior = flat_prior, family = "bernoulli",
+                    seed = 1234)
 
-posteriors <- insight::get_parameters(thapca_flat3, iterations = 10^5)
+pred1 <- posterior_epred(thapca_flat2,
+                         newdata = mutate(thapca_flat2$data, Trt = 1))
+
+pred0 <- posterior_epred(thapca_flat2,
+                         newdata = mutate(thapca_flat2$data, Trt = 0))
+
+ratio <- apply(pred1, 1, mean) / apply(pred0, 1, mean)
 
 # Some summaries used for plot legend
-any_harm <- sum(exp(posteriors$Trt) < 1) / nrow(posteriors)
-severe_harm <- sum(exp(posteriors$Trt) < 1/1.25) / nrow(posteriors)
-rope <- sum(exp(posteriors$Trt) < 1.05 &
-            exp(posteriors$Trt) > 1/1.05) / nrow(posteriors)
+any_harm <- sum(ratio < 1) / length(ratio)
+severe_harm <- sum(ratio < 1/1.25) / length(ratio)
+rope <- sum(ratio < 1.05 & ratio > 1/1.05) / length(ratio)
 
 # Third figure panel
-posteriors$exptrt <- exp(posteriors$Trt)
-temp_plot <- ggplot(posteriors, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio), aes(x = ratio)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
@@ -221,7 +214,7 @@ plot_data$barriers[plot_data$x < 1/1.25] <- 2
 
 fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Relative Risk", y = "") +
+  labs(x = "Relative Risk", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(0.5, 2.5, by = 0.5),
                      breaks = seq(0.5, 2.5, by = 0.5)) +
@@ -242,7 +235,7 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 7, 21, 28), ],
+                   c(1, 7, 19, 25), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 1.8, y = 1.8, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -268,24 +261,15 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 #######################################################################
 # Secondary outcome on RD scale
-thapca_flat4 <- stan_glm(SurviveM12 ~ Trt + AgeGroup,
-                         data = dat_secondary1,
-                         prior_intercept = normal(0, 100),
-                         prior = normal(location = c(0, 0),
-                                        scale = c(100, 100)),
-                         family = gaussian(link = "identity"),
-                         seed = 1234)
-
-posteriors <- insight::get_parameters(thapca_flat4, iterations = 10^5)
+diff <- apply(pred1, 1, mean) - apply(pred0, 1, mean)
 
 # Some summaries used for plot legend
-any_harm <- sum(posteriors$Trt < 0) / nrow(posteriors)
-severe_harm <- sum(posteriors$Trt < -0.05) / nrow(posteriors)
-rope <- sum(posteriors$Trt < 0.01 & posteriors$Trt > -0.01) /
-  nrow(posteriors)
+any_harm <- sum(diff < 0) / length(diff)
+severe_harm <- sum(diff < -0.05) / length(diff)
+rope <- sum(diff < 0.01 & diff > -0.01) / length(diff)
 
 # Fourth figure panel
-temp_plot <- ggplot(posteriors, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
@@ -295,7 +279,7 @@ plot_data$barriers[plot_data$x < -0.05] <- 2
 
 fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Risk Difference", y = "") +
+  labs(x = "Risk Difference", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(-0.1, 0.2, by = 0.05),
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
@@ -316,7 +300,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > -0.01 & x < 0.01)[
-                   c(1, 7, 19, 25), ],
+                   c(1, 7, 16, 22), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
