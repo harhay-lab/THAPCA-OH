@@ -240,8 +240,8 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   annotate("text", x = 1.8, y = 1.8, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
                           "\n", "P(Harm) = ", round(any_harm, 2),
-                          "\n", "P(Severe Harm) < 0.01",
-                          #round(severe_harm, 2),
+                          "\n", "P(Severe Harm) = ",
+                          round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
   annotate("rect", xmin = 1.73, xmax = 1.78, ymin = 1.88, ymax = 1.95,
            fill = "#DEEBF7") +
@@ -333,10 +333,18 @@ figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
 figure <- fill_panel(figure, fig1)
 figure <- fill_panel(figure, fig3)
+
+# Output pdf of RR figure, dims may need to be changed
+pdf("flat-prior-RR-figure-test.pdf", width = 10, height = 6)
 figure
+dev.off()
 
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
 figure2 <- fill_panel(figure2, fig2)
 figure2 <- fill_panel(figure2, fig4)
+
+# Output pdf of RD figure, dims may need to be changed
+pdf("flat-prior-RD-figure-test.pdf", width = 10, height = 6)
 figure2
+dev.off()
