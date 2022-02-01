@@ -47,7 +47,8 @@ flat_prior <- prior(normal(0, 1000), class = "b")
 dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
 dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
 thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
-                   prior = flat_prior, family = "bernoulli", seed = 1234)
+                   prior = flat_prior, family = "bernoulli", seed = 1234,
+                   iter = 5000, chains = 8)
 
 pred1 <- posterior_epred(thapca_flat,
                          newdata = mutate(thapca_flat$data, Trt = 1))
@@ -191,7 +192,7 @@ dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
 dat_secondary1$AgeFactor <- as.factor(dat_secondary1$AgeGroup)
 thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_primary,
                     prior = flat_prior, family = "bernoulli",
-                    seed = 1234)
+                    seed = 1234, iter = 5000, chains = 8)
 
 pred1 <- posterior_epred(thapca_flat2,
                          newdata = mutate(thapca_flat2$data, Trt = 1))
