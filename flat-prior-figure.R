@@ -10,7 +10,7 @@ library(ggpubr)
 library(parameters)
 library(multipanelfigure)
 library(sanon)
-library(rstanarm)
+#library(rstanarm)
 
 # Load trial data
 dat <- read.csv("../outcomes.csv")
@@ -42,9 +42,11 @@ summary(sanon(DeltaVabs ~ grp(TreatRand) + strt(AgeGroup),
 
 # Flat prior analysis
 # SD = 100 ensures that the prior is uninformative
-dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
 flat_prior <- prior(normal(0, 1000), class = "b")
-thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeGroup, data = dat_primary,
+
+dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
+dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
+thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
                    prior = flat_prior, family = "bernoulli", seed = 1234)
 
 pred1 <- posterior_epred(thapca_flat,
@@ -92,7 +94,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 3, 9, 11), ],
+                   c(1, 3, 6, 8), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 3.2, y = 0.9, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -142,7 +144,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(xlim = c(-0.13, 0.3),
-                  ylim = c(0, 9)) +
+                  ylim = c(0, 9.5)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   #geom_segment(inherit.aes = FALSE,
@@ -186,7 +188,8 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 # Flat prior
 dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
-thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeGroup, data = dat_primary,
+dat_secondary1$AgeFactor <- as.factor(dat_secondary1$AgeGroup)
+thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_primary,
                     prior = flat_prior, family = "bernoulli",
                     seed = 1234)
 
@@ -235,13 +238,13 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 7, 19, 25), ],
+                   c(1, 8, 19, 26), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 1.8, y = 1.8, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
                           "\n", "P(Harm) = ", round(any_harm, 2),
-                          "\n", "P(Severe Harm) = ",
-                          round(severe_harm, 2),
+                          "\n", "P(Severe Harm) < 0.01",
+                          #round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
   annotate("rect", xmin = 1.73, xmax = 1.78, ymin = 1.88, ymax = 1.95,
            fill = "#DEEBF7") +
@@ -285,7 +288,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(xlim = c(-0.13, 0.3),
-                  ylim = c(0, 9)) +
+                  ylim = c(0, 9.5)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   #geom_segment(inherit.aes = FALSE,
@@ -325,9 +328,9 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
              linetype = 1)
 
 # Combine figures
-# Both figures exported as landscape PDFs with 5 in x 10 in dimensions
-ggarrange(fig1, fig3, ncol = 2)
-ggarrange(fig2, fig4, ncol = 2)
+# Both figures exported as landscape PDFs with 6 in x 10 in dimensions
+#ggarrange(fig1, fig3, ncol = 2)
+#ggarrange(fig2, fig4, ncol = 2)
 
 figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
@@ -335,7 +338,7 @@ figure <- fill_panel(figure, fig1)
 figure <- fill_panel(figure, fig3)
 
 # Output pdf of RR figure, dims may need to be changed
-pdf("flat-prior-RR-figure-test.pdf", width = 10, height = 6)
+pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
 figure
 dev.off()
 
@@ -345,6 +348,44 @@ figure2 <- fill_panel(figure2, fig2)
 figure2 <- fill_panel(figure2, fig4)
 
 # Output pdf of RD figure, dims may need to be changed
-pdf("flat-prior-RD-figure-test.pdf", width = 10, height = 6)
+pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
 figure2
 dev.off()
+
+
+
+
+# Explore conditional effects
+thapca_flat3 <- brm(PrimaryEndpoint ~ Trt*AgeFactor,
+                    data = dat_primary, prior = flat_prior,
+                    family = "bernoulli", seed = 1234)
+pred11 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 1,
+                                           AgeFactor = 1))
+pred01 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 0,
+                                           AgeFactor = 1))
+
+diff1 <- apply(pred11, 1, mean) - apply(pred01, 1, mean)
+sum(diff1 < 0) / length(diff1)
+
+pred12 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 1,
+                                           AgeFactor = 2))
+pred02 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 0,
+                                           AgeFactor = 2))
+
+diff2 <- apply(pred12, 1, mean) - apply(pred02, 1, mean)
+sum(diff2 < 0) / length(diff2)
+
+
+pred13 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 1,
+                                           AgeFactor = 3))
+pred03 <- posterior_epred(thapca_flat3,
+                          newdata = mutate(thapca_flat3$data, Trt = 0,
+                                           AgeFactor = 3))
+
+diff3 <- apply(pred13, 1, mean) - apply(pred03, 1, mean)
+sum(diff3 < 0) / length(diff3)
