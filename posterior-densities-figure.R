@@ -9,12 +9,13 @@ library(brms)
 library(broom)
 library(parameters)
 library(sanon)
-library(rstanarm)
+#library(rstanarm)
 
 # Load trial data
 dat <- read.csv("../outcomes.csv")
 dat_primary <- dat[dat$Primary == 1 & dat$PrimaryEndpoint != 97, ]
 dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
+dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
 
 # Helper functions to determine priors
 getDiff <- function(x, priormean = 0,
@@ -34,119 +35,190 @@ getPriorSD <- function(priormean = 0,
 
 
 #######################################################################
-# First do analysis on risk difference scale
+# Analysis
 
 # Optimistic priors
 # Strong optimistic prior
-o_mean <- 0.05
+o_mean <- log(1.25)
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
                     priormean = o_mean)
-so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(so_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_so <- insight::get_parameters(so_mod)
+stanvars <- stanvar(o_mean) + stanvar(so_sd)
+so_prior <- prior(normal(o_mean, so_sd), class = "b", coef = Trt)
+so_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = so_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+  
+pred1_so <- posterior_epred(so_mod,
+                            newdata = mutate(so_mod$data, Trt = 1))
+pred0_so <- posterior_epred(so_mod,
+                            newdata = mutate(so_mod$data, Trt = 0))
+
+ratio_so <- apply(pred1_so, 1, mean) / apply(pred0_so, 1, mean)
+diff_so <- apply(pred1_so, 1, mean) - apply(pred0_so, 1, mean)
 
 # Moderate optimistic prior
 mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
                     priormean = o_mean)
-mo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(mo_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_mo <- insight::get_parameters(mo_mod)
+stanvars <- stanvar(o_mean) + stanvar(mo_sd)
+mo_prior <- prior(normal(o_mean, mo_sd), class = "b", coef = Trt)
+mo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = mo_prior, stanvars = stanvars, iter = 10000,
+              family = "bernoulli", seed = 1234, chains = 8)
+
+pred1_mo <- posterior_epred(mo_mod,
+                            newdata = mutate(mo_mod$data,Trt = 1))
+pred0_mo <- posterior_epred(mo_mod,
+                            newdata = mutate(mo_mod$data, Trt = 0))
+
+ratio_mo <- apply(pred1_mo, 1, mean) / apply(pred0_mo, 1, mean)
+diff_mo <- apply(pred1_mo, 1, mean) - apply(pred0_mo, 1, mean)
 
 # Weak optimistic prior
 wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
                     priormean = o_mean)
-wo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(wo_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_wo <- insight::get_parameters(wo_mod)
+stanvars <- stanvar(o_mean) + stanvar(wo_sd)
+wo_prior <- prior(normal(o_mean, wo_sd), class = "b", coef = Trt)
+wo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = wo_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_wo <- posterior_epred(wo_mod,
+                            newdata = mutate(wo_mod$data, Trt = 1))
+pred0_wo <- posterior_epred(wo_mod,
+                            newdata = mutate(wo_mod$data, Trt = 0))
+
+ratio_wo <- apply(pred1_wo, 1, mean) / apply(pred0_wo, 1, mean)
+diff_wo <- apply(pred1_wo, 1, mean) - apply(pred0_wo, 1, mean)
 
 # Neutral priors
 # Strong neutral prior
-sn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = -0.05,
+sn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(1/1.5),
                     priormean = 0)
-sn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(sn_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_sn <- insight::get_parameters(sn_mod)
+stanvars <- stanvar(sn_sd)
+sn_prior <- prior(normal(0, sn_sd), class = "b", coef = Trt)
+sn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = sn_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_sn <- posterior_epred(sn_mod,
+                            newdata = mutate(sn_mod$data, Trt = 1))
+pred0_sn <- posterior_epred(sn_mod,
+                            newdata = mutate(sn_mod$data, Trt = 0))
+
+ratio_sn <- apply(pred1_sn, 1, mean) / apply(pred0_sn, 1, mean)
+diff_sn <- apply(pred1_sn, 1, mean) - apply(pred0_sn, 1, mean)
 
 # Moderate neutral prior
-mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = -0.1,
+mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.5),
                     priormean = 0)
-mn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(mn_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_mn <- insight::get_parameters(mn_mod)
+stanvars <- stanvar(mn_sd)
+mn_prior <- prior(normal(0, mn_sd), class = "b", coef = Trt)
+mn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = mn_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_mn <- posterior_epred(mn_mod,
+                            newdata = mutate(mn_mod$data, Trt = 1))
+pred0_mn <- posterior_epred(mn_mod,
+                            newdata = mutate(mn_mod$data, Trt = 0))
+
+ratio_mn <- apply(pred1_mn, 1, mean) / apply(pred0_mn, 1, mean)
+diff_mn <- apply(pred1_mn, 1, mean) - apply(pred0_mn, 1, mean)
 
 # Weak neutral prior
-wn_sd <- 5
-wn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(wn_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_wn <- insight::get_parameters(wn_mod)
+wn_sd <- 3
+wn_prior <- prior(normal(0, 3), class = "b", coef = Trt)
+wn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = wn_prior, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_wn <- posterior_epred(wn_mod,
+                            newdata = mutate(wn_mod$data, Trt = 1))
+pred0_wn <- posterior_epred(wn_mod,
+                            newdata = mutate(wn_mod$data, Trt = 0))
+
+ratio_wn <- apply(pred1_wn, 1, mean) / apply(pred0_wn, 1, mean)
+diff_wn <- apply(pred1_wn, 1, mean) - apply(pred0_wn, 1, mean)
 
 # Pessimistic priors
 # Strong pessimistic prior
-p_mean <- -0.05
+p_mean <- log(1/1.25)
 sp_sd <- so_sd
-sp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(sp_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_sp <- insight::get_parameters(sp_mod)
+stanvars <- stanvar(p_mean) + stanvar(sp_sd)
+sp_prior <- prior(normal(p_mean, sp_sd), class = "b", coef = Trt)
+sp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = sp_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_sp <- posterior_epred(sp_mod,
+                            newdata = mutate(sp_mod$data, Trt = 1))
+pred0_sp <- posterior_epred(sp_mod,
+                            newdata = mutate(sp_mod$data, Trt = 0))
+
+ratio_sp <- apply(pred1_sp, 1, mean) / apply(pred0_sp, 1, mean)
+diff_sp <- apply(pred1_sp, 1, mean) - apply(pred0_sp, 1, mean)
 
 # Moderate pessimistic prior
 mp_sd <- mo_sd
-mp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(mp_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_mp <- insight::get_parameters(mp_mod)
+stanvars <- stanvar(p_mean) + stanvar(mp_sd)
+mp_prior <- prior(normal(p_mean, mp_sd), class = "b", coef = Trt)
+mp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = mp_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_mp <- posterior_epred(mp_mod,
+                            newdata = mutate(mp_mod$data, Trt = 1))
+pred0_mp <- posterior_epred(mp_mod,
+                            newdata = mutate(mp_mod$data, Trt = 0))
+
+ratio_mp <- apply(pred1_mp, 1, mean) / apply(pred0_mp, 1, mean)
+diff_mp <- apply(pred1_mp, 1, mean) - apply(pred0_mp, 1, mean)
 
 # Weak pessimistic prior
 wp_sd <- wo_sd
-wp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(wp_sd, 100)),
-                   family = gaussian(link = "identity"), seed = 1234)
-posteriors_wp <- insight::get_parameters(wp_mod)
+stanvars <- stanvar(p_mean) + stanvar(wp_sd)
+wp_prior <- prior(normal(p_mean, wp_sd), class = "b", coef = Trt)
+wp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+              prior = wp_prior, stanvars = stanvars, chains = 8,
+              family = "bernoulli", seed = 1234, iter = 10000)
+
+pred1_wp <- posterior_epred(wp_mod,
+                            newdata = mutate(wp_mod$data, Trt = 1))
+pred0_wp <- posterior_epred(wp_mod,
+                            newdata = mutate(wp_mod$data, Trt = 0))
+
+ratio_wp <- apply(pred1_wp, 1, mean) / apply(pred0_wp, 1, mean)
+diff_wp <- apply(pred1_wp, 1, mean) - apply(pred0_wp, 1, mean)
 
 
-# Prepare to make figure
+#######################################################################
+# Prepare to make RD figure
+# Helper function to get approximate prior on RD scale from log(OR) scale
+approxPrior <- function(num, baserisk, mean, sd) {
+  logORprior <- rnorm(num, mean, sd)
+  intermed <- exp(logORprior)*baserisk / (1 - baserisk)
+  return(intermed / (1 + intermed) - baserisk)
+}
+
+# Can I pull baseline risk for each model output line?
+#hist(approxPrior(length(diff_wp), apply(pred0, 1, mean), p_mean, wp_sd))
+#hist(approxPrior(length(diff_wn), apply(pred0, 1, mean), 0, 3))
+
 # Make data set with densities for each of the 9 priors
-temp_plot <- ggplot(posteriors_sn, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_sn), aes(x = diff_sn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_sn <- p$data[[1]][, c(1, 2)]
 plot_data_sn$Distribution <- "Posterior"
 
-plot_data_sn2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_sn2$y <- dnorm(plot_data_sn2$x, 0, sn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_sn),
+                                      apply(pred0_sn, 1, mean), 0,
+                                      sn_sd)),
+                    aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sn2 <- p$data[[1]][, c(1, 2)]
 plot_data_sn2$Distribution <- "Prior"
 
 plot_data_sn <- rbind(plot_data_sn, plot_data_sn2)
@@ -155,21 +227,25 @@ plot_data_sn$barriers[plot_data_sn$x < 0] <- 1
 plot_data_sn$strength <- "Strong"
 plot_data_sn$belief <- "Neutral"
 plot_data_sn$label <- paste0("RD = ",
-                             round(median(posteriors_sn$Trt), 2),
+                             round(median(diff_sn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_sn$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_sn$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_sn, 0.025), 2), ", ",
+                             round(quantile(diff_sn, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_mn, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_mn), aes(x = diff_mn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mn <- p$data[[1]][, c(1, 2)]
 plot_data_mn$Distribution <- "Posterior"
 
-plot_data_mn2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_mn2$y <- dnorm(plot_data_mn2$x, 0, mn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_mn),
+                                      apply(pred0_mn, 1, mean), 0,
+                                      mn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mn2 <- p$data[[1]][, c(1, 2)]
 plot_data_mn2$Distribution <- "Prior"
 
 plot_data_mn <- rbind(plot_data_mn, plot_data_mn2)
@@ -178,21 +254,25 @@ plot_data_mn$barriers[plot_data_mn$x < 0] <- 1
 plot_data_mn$strength <- "Moderate"
 plot_data_mn$belief <- "Neutral"
 plot_data_mn$label <- paste0("RD = ",
-                             round(median(posteriors_mn$Trt), 2),
+                             round(median(diff_mn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mn$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mn$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_mn, 0.025), 2), ", ",
+                             round(quantile(diff_mn, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_wn, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_wn), aes(x = diff_wn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wn <- p$data[[1]][, c(1, 2)]
 plot_data_wn$Distribution <- "Posterior"
 
-plot_data_wn2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_wn2$y <- dnorm(plot_data_wn2$x, 0, wn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_wn),
+                                      apply(pred0_wn, 1, mean), 0,
+                                      wn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wn2 <- p$data[[1]][, c(1, 2)]
 plot_data_wn2$Distribution <- "Prior"
 
 plot_data_wn <- rbind(plot_data_wn, plot_data_wn2)
@@ -201,21 +281,25 @@ plot_data_wn$barriers[plot_data_wn$x < 0] <- 1
 plot_data_wn$strength <- " Weak"
 plot_data_wn$belief <- "Neutral"
 plot_data_wn$label <- paste0("RD = ",
-                             round(median(posteriors_wn$Trt), 2),
+                             round(median(diff_wn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_wn$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wn$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_wn, 0.025), 2), ", ",
+                             round(quantile(diff_wn, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_so, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_so), aes(x = diff_so)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_so <- p$data[[1]][, c(1, 2)]
 plot_data_so$Distribution <- "Posterior"
 
-plot_data_so2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_so2$y <- dnorm(plot_data_so2$x, o_mean, so_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_so),
+                                      apply(pred0_so, 1, mean), o_mean,
+                                      so_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_so2 <- p$data[[1]][, c(1, 2)]
 plot_data_so2$Distribution <- "Prior"
 
 plot_data_so <- rbind(plot_data_so, plot_data_so2)
@@ -224,21 +308,25 @@ plot_data_so$barriers[plot_data_so$x < 0] <- 1
 plot_data_so$strength <- "Strong"
 plot_data_so$belief <- " Optimistic"
 plot_data_so$label <- paste0("RD = ",
-                             round(median(posteriors_so$Trt), 2),
+                             round(median(diff_so), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_so$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_so$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_so, 0.025), 2), ", ",
+                             round(quantile(diff_so, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_mo, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_mo), aes(x = diff_mo)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mo <- p$data[[1]][, c(1, 2)]
 plot_data_mo$Distribution <- "Posterior"
 
-plot_data_mo2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_mo2$y <- dnorm(plot_data_mo2$x, o_mean, mo_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_mo),
+                                      apply(pred0_mo, 1, mean), o_mean,
+                                      mo_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mo2 <- p$data[[1]][, c(1, 2)]
 plot_data_mo2$Distribution <- "Prior"
 
 plot_data_mo <- rbind(plot_data_mo, plot_data_mo2)
@@ -247,21 +335,25 @@ plot_data_mo$barriers[plot_data_mo$x < 0] <- 1
 plot_data_mo$strength <- "Moderate"
 plot_data_mo$belief <- " Optimistic"
 plot_data_mo$label <- paste0("RD = ",
-                             round(median(posteriors_mo$Trt), 2),
+                             round(median(diff_mo), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mo$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mo$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_mo, 0.025), 2), ", ",
+                             round(quantile(diff_mo, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_wo, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_wo), aes(x = diff_wo)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wo <- p$data[[1]][, c(1, 2)]
 plot_data_wo$Distribution <- "Posterior"
 
-plot_data_wo2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_wo2$y <- dnorm(plot_data_wo2$x, o_mean, wo_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_wo),
+                                      apply(pred0_wo, 1, mean), o_mean,
+                                      wo_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wo2 <- p$data[[1]][, c(1, 2)]
 plot_data_wo2$Distribution <- "Prior"
 
 plot_data_wo <- rbind(plot_data_wo, plot_data_wo2)
@@ -270,21 +362,25 @@ plot_data_wo$barriers[plot_data_wo$x < 0] <- 1
 plot_data_wo$strength <- " Weak"
 plot_data_wo$belief <- " Optimistic"
 plot_data_wo$label <- paste0("RD = ",
-                             round(median(posteriors_wo$Trt), 2),
+                             round(median(diff_wo), 2),
                              "\n", "95% CrI: (",
-                             round(quantile(posteriors_wo$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wo$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_wo, 0.025), 2), ", ",
+                             round(quantile(diff_wo, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_sp, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_sp), aes(x = diff_sp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_sp <- p$data[[1]][, c(1, 2)]
 plot_data_sp$Distribution <- "Posterior"
 
-plot_data_sp2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_sp2$y <- dnorm(plot_data_sp2$x, p_mean, sp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_sp),
+                                      apply(pred0_sp, 1, mean), p_mean,
+                                      sp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sp2 <- p$data[[1]][, c(1, 2)]
 plot_data_sp2$Distribution <- "Prior"
 
 plot_data_sp <- rbind(plot_data_sp, plot_data_sp2)
@@ -293,21 +389,25 @@ plot_data_sp$barriers[plot_data_sp$x < 0] <- 1
 plot_data_sp$strength <- "Strong"
 plot_data_sp$belief <- "Pessimistic"
 plot_data_sp$label <- paste0("RD = ",
-                             round(median(posteriors_sp$Trt), 2),
+                             round(median(diff_sp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_sp$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_sp$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_sp, 0.025), 2), ", ",
+                             round(quantile(diff_sp, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_mp, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_mp), aes(x = diff_mp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mp <- p$data[[1]][, c(1, 2)]
 plot_data_mp$Distribution <- "Posterior"
 
-plot_data_mp2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_mp2$y <- dnorm(plot_data_mp2$x, p_mean, mp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_mp),
+                                      apply(pred0_mp, 1, mean), p_mean,
+                                      mp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mp2 <- p$data[[1]][, c(1, 2)]
 plot_data_mp2$Distribution <- "Prior"
 
 plot_data_mp <- rbind(plot_data_mp, plot_data_mp2)
@@ -316,21 +416,25 @@ plot_data_mp$barriers[plot_data_mp$x < 0] <- 1
 plot_data_mp$strength <- "Moderate"
 plot_data_mp$belief <- "Pessimistic"
 plot_data_mp$label <- paste0("RD = ",
-                             round(median(posteriors_mp$Trt), 2),
+                             round(median(diff_mp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mp$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mp$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_mp, 0.025), 2), ", ",
+                             round(quantile(diff_mp, 0.975), 2), ")")
 
-temp_plot <- ggplot(posteriors_wp, aes(x = Trt)) +
+temp_plot <- ggplot(data.frame(diff_wp), aes(x = diff_wp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wp <- p$data[[1]][, c(1, 2)]
 plot_data_wp$Distribution <- "Posterior"
 
-plot_data_wp2 <- data.frame(x = seq(-0.25, 0.25, 0.0005))
-plot_data_wp2$y <- dnorm(plot_data_wp2$x, p_mean, wp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior(length(diff_wp),
+                                      apply(pred0_wp, 1, mean), p_mean,
+                                      wp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wp2 <- p$data[[1]][, c(1, 2)]
 plot_data_wp2$Distribution <- "Prior"
 
 plot_data_wp <- rbind(plot_data_wp, plot_data_wp2)
@@ -339,12 +443,10 @@ plot_data_wp$barriers[plot_data_wp$x < 0] <- 1
 plot_data_wp$strength <- " Weak"
 plot_data_wp$belief <- "Pessimistic"
 plot_data_wp$label <- paste0("RD = ",
-                             round(median(posteriors_wp$Trt), 2),
+                             round(median(diff_wp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_wp$Trt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wp$Trt,
-                                            0.975), 2), ")")
+                             round(quantile(diff_wp, 0.025), 2), ", ",
+                             round(quantile(diff_wp, 0.975), 2), ")")
 
 plot_data <- rbind(plot_data_sn, plot_data_mn, plot_data_wn,
                    plot_data_so, plot_data_mo, plot_data_wo,
@@ -360,80 +462,80 @@ f_labels <-
              Distribution = rep("Posterior", 9),
              barriers = rep(0, 9),
              label = c(paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_so$Trt)),
+                              sprintf("%.2f", median(diff_so)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_so$Trt,
+                              sprintf("%.2f", quantile(diff_so,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_so$Trt,
+                              sprintf("%.2f", quantile(diff_so,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_mn$Trt)),
+                              sprintf("%.2f", median(diff_mn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_mn$Trt,
+                              sprintf("%.2f", quantile(diff_mn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_mn$Trt,
+                              sprintf("%.2f", quantile(diff_mn,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_wp$Trt)),
+                              sprintf("%.2f", median(diff_wp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_wp$Trt,
+                              sprintf("%.2f", quantile(diff_wp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_wp$Trt,
+                              sprintf("%.2f", quantile(diff_wp,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_mo$Trt)),
+                              sprintf("%.2f", median(diff_mo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_mo$Trt,
+                              sprintf("%.2f", quantile(diff_mo,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_mo$Trt,
+                              sprintf("%.2f", quantile(diff_mo,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_wn$Trt)),
+                              sprintf("%.2f", median(diff_wn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_wn$Trt,
+                              sprintf("%.2f", quantile(diff_wn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_wn$Trt,
+                              sprintf("%.2f", quantile(diff_wn,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_sp$Trt)),
+                              sprintf("%.2f", median(diff_sp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_sp$Trt,
+                              sprintf("%.2f", quantile(diff_sp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_sp$Trt,
+                              sprintf("%.2f", quantile(diff_sp,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_wo$Trt)),
+                              sprintf("%.2f", median(diff_wo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_wo$Trt,
+                              sprintf("%.2f", quantile(diff_wo,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_wo$Trt,
+                              sprintf("%.2f", quantile(diff_wo,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_sn$Trt)),
+                              sprintf("%.2f", median(diff_sn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_sn$Trt,
+                              sprintf("%.2f", quantile(diff_sn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_sn$Trt,
+                              sprintf("%.2f", quantile(diff_sn,
                                                        0.975)), ")"),
                        paste0("Median RD = ",
-                              sprintf("%.2f", median(posteriors_mp$Trt)),
+                              sprintf("%.2f", median(diff_mp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(posteriors_mp$Trt,
+                              sprintf("%.2f", quantile(diff_mp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(posteriors_mp$Trt,
+                              sprintf("%.2f", quantile(diff_mp,
                                                        0.975)), ")")))
 
 # Make figure for RD scale
 plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
-  facet_grid(belief ~ strength, scales = "free") +
+  facet_grid(belief ~ strength, scales = "free", switch = "y") +
   labs(x = "Risk Difference", y = "Density") +
   scale_x_continuous(labels = seq(-0.2, 0.2, by = 0.1),
                      breaks = seq(-0.2, 0.2, by = 0.1)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(-0.25, 0.25),
-                  ylim = c(0, 19)) +
+  scale_y_continuous(expand = c(0, 0), position = "right") +
+  coord_cartesian(xlim = c(-0.25, 0.3),
+                  ylim = c(0, 25)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
@@ -444,121 +546,38 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
              linetype = 1) +
   geom_line() +
   geom_text(data = f_labels, size = 2,
-            aes(x = 0.15, y = 16, label = label))
+            aes(x = 0.2, y = 16, label = label))
 
+# Output figure
+pdf("posterior-density-RD-figure.pdf", width = 8.5, height = 6)
+fig1
+dev.off()
 
 #######################################################################
-# Now do analysis on relative risk scale
+# Now make figure on relative risk scale
 
-# Optimistic priors
-# Strong optimistic prior
-o_mean <- log(1.25)
-so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
-                    priormean = o_mean)
-so_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(so_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_so <- insight::get_parameters(so_mod)
+# Helper function to get approximate prior on RR scale from log(OR) scale
+approxPrior2 <- function(num, baserisk, mean, sd) {
+  logORprior <- rnorm(num, mean, sd)
+  intermed <- exp(logORprior)*baserisk / (1 - baserisk)
+  return(intermed / (1 + intermed) / baserisk)
+}
 
-# Moderate optimistic prior
-mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
-                    priormean = o_mean)
-mo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(mo_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_mo <- insight::get_parameters(mo_mod)
-
-# Weak optimistic prior
-wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
-                    priormean = o_mean)
-wo_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(o_mean, 0),
-                                  scale = c(wo_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_wo <- insight::get_parameters(wo_mod)
-
-# Neutral priors
-# Strong neutral prior
-sn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(1/1.5))
-sn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(sn_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_sn <- insight::get_parameters(sn_mod)
-
-# Moderate neutral prior
-mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.5))
-mn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(mn_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_mn <- insight::get_parameters(mn_mod)
-
-# Weak neutral prior (SD = 5)
-wn_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(0, 0),
-                                  scale = c(5, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_wn <- insight::get_parameters(wn_mod)
-
-# Pessimistic priors
-# Strong pessimistic prior
-p_mean <- log(1/1.25)
-sp_sd <- so_sd
-sp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(sp_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_sp <- insight::get_parameters(sp_mod)
-
-# Moderate pessimistic prior
-mp_sd <- mo_sd
-mp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(mp_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_mp <- insight::get_parameters(mp_mod)
-
-# Weak pessimistic prior
-wp_sd <- wo_sd
-wp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeGroup,
-                   data = dat_primary,
-                   prior_intercept = normal(0, 100),
-                   prior = normal(location = c(p_mean, 0),
-                                  scale = c(wp_sd, 100)),
-                   family = binomial(link = "log"), seed = 1234)
-posteriors_wp <- insight::get_parameters(wp_mod)
-
-
-# Prepare to make figure
-# Make data set with densities for each of the 9 priors
-posteriors_sn$exptrt <- exp(posteriors_sn$Trt)
-temp_plot <- ggplot(posteriors_sn, aes(x = exptrt)) +
+# Plot densities for each of the 9 priors
+temp_plot <- ggplot(data.frame(ratio_sn), aes(x = ratio_sn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_sn <- p$data[[1]][, c(1, 2)]
 plot_data_sn$Distribution <- "Posterior"
 
-plot_data_sn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_sn2$y <- dnorm(log(plot_data_sn2$x), 0, sn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_sn),
+                                       apply(pred0_sn, 1, mean), 0,
+                                       sn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sn2 <- p$data[[1]][, c(1, 2)]
 plot_data_sn2$Distribution <- "Prior"
 
 plot_data_sn <- rbind(plot_data_sn, plot_data_sn2)
@@ -567,22 +586,25 @@ plot_data_sn$barriers[plot_data_sn$x < 1] <- 1
 plot_data_sn$strength <- "Strong"
 plot_data_sn$belief <- "Neutral"
 plot_data_sn$label <- paste0("RR = ",
-                             round(median(posteriors_sn$exptrt), 2),
+                             round(median(ratio_sn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_sn$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_sn$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_sn, 0.025), 2), ", ",
+                             round(quantile(ratio_sn, 0.975), 2), ")")
 
-posteriors_mn$exptrt <- exp(posteriors_mn$Trt)
-temp_plot <- ggplot(posteriors_mn, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_mn), aes(x = ratio_mn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mn <- p$data[[1]][, c(1, 2)]
 plot_data_mn$Distribution <- "Posterior"
 
-plot_data_mn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mn2$y <- dnorm(log(plot_data_mn2$x), 0, mn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_mn),
+                                       apply(pred0_mn, 1, mean), 0,
+                                       mn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mn2 <- p$data[[1]][, c(1, 2)]
 plot_data_mn2$Distribution <- "Prior"
 
 plot_data_mn <- rbind(plot_data_mn, plot_data_mn2)
@@ -591,22 +613,25 @@ plot_data_mn$barriers[plot_data_mn$x < 1] <- 1
 plot_data_mn$strength <- "Moderate"
 plot_data_mn$belief <- "Neutral"
 plot_data_mn$label <- paste0("RR = ",
-                             round(median(posteriors_mn$exptrt), 2),
+                             round(median(ratio_mn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mn$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mn$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_mn, 0.025), 2), ", ",
+                             round(quantile(ratio_mn, 0.975), 2), ")")
 
-posteriors_wn$exptrt <- exp(posteriors_wn$Trt)
-temp_plot <- ggplot(posteriors_wn, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_wn), aes(x = ratio_wn)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wn <- p$data[[1]][, c(1, 2)]
 plot_data_wn$Distribution <- "Posterior"
 
-plot_data_wn2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wn2$y <- dnorm(log(plot_data_wn2$x), 0, wn_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_wn),
+                                       apply(pred0_wn, 1, mean), 0,
+                                       wn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wn2 <- p$data[[1]][, c(1, 2)]
 plot_data_wn2$Distribution <- "Prior"
 
 plot_data_wn <- rbind(plot_data_wn, plot_data_wn2)
@@ -615,22 +640,25 @@ plot_data_wn$barriers[plot_data_wn$x < 1] <- 1
 plot_data_wn$strength <- " Weak"
 plot_data_wn$belief <- "Neutral"
 plot_data_wn$label <- paste0("RR = ",
-                             round(median(posteriors_wn$exptrt), 2),
+                             round(median(ratio_wn), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_wn$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wn$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_wn, 0.025), 2), ", ",
+                             round(quantile(ratio_wn, 0.975), 2), ")")
 
-posteriors_so$exptrt <- exp(posteriors_so$Trt)
-temp_plot <- ggplot(posteriors_so, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_so), aes(x = ratio_so)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_so <- p$data[[1]][, c(1, 2)]
 plot_data_so$Distribution <- "Posterior"
 
-plot_data_so2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_so2$y <- dnorm(log(plot_data_so2$x), o_mean, so_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_so),
+                                       apply(pred0_so, 1, mean), o_mean,
+                                       so_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_so2 <- p$data[[1]][, c(1, 2)]
 plot_data_so2$Distribution <- "Prior"
 
 plot_data_so <- rbind(plot_data_so, plot_data_so2)
@@ -639,22 +667,25 @@ plot_data_so$barriers[plot_data_so$x < 1] <- 1
 plot_data_so$strength <- "Strong"
 plot_data_so$belief <- " Optimistic"
 plot_data_so$label <- paste0("RR = ",
-                             round(median(posteriors_so$exptrt), 2),
+                             round(median(ratio_so), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_so$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_so$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_so, 0.025), 2), ", ",
+                             round(quantile(ratio_so, 0.975), 2), ")")
 
-posteriors_mo$exptrt <- exp(posteriors_mo$Trt)
-temp_plot <- ggplot(posteriors_mo, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_mo), aes(x = ratio_mo)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mo <- p$data[[1]][, c(1, 2)]
 plot_data_mo$Distribution <- "Posterior"
 
-plot_data_mo2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mo2$y <- dnorm(log(plot_data_mo2$x), o_mean, mo_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_mo),
+                                       apply(pred0_mo, 1, mean), o_mean,
+                                       mo_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mo2 <- p$data[[1]][, c(1, 2)]
 plot_data_mo2$Distribution <- "Prior"
 
 plot_data_mo <- rbind(plot_data_mo, plot_data_mo2)
@@ -663,22 +694,25 @@ plot_data_mo$barriers[plot_data_mo$x < 1] <- 1
 plot_data_mo$strength <- "Moderate"
 plot_data_mo$belief <- " Optimistic"
 plot_data_mo$label <- paste0("RR = ",
-                             round(median(posteriors_mo$exptrt), 2),
+                             round(median(ratio_mo), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mo$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mo$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_mo, 0.025), 2), ", ",
+                             round(quantile(ratio_mo, 0.975), 2), ")")
 
-posteriors_wo$exptrt <- exp(posteriors_wo$Trt)
-temp_plot <- ggplot(posteriors_wo, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_wo), aes(x = ratio_wo)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wo <- p$data[[1]][, c(1, 2)]
 plot_data_wo$Distribution <- "Posterior"
 
-plot_data_wo2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wo2$y <- dnorm(log(plot_data_wo2$x), o_mean, wo_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_wo),
+                                       apply(pred0_wo, 1, mean), o_mean,
+                                       wo_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wo2 <- p$data[[1]][, c(1, 2)]
 plot_data_wo2$Distribution <- "Prior"
 
 plot_data_wo <- rbind(plot_data_wo, plot_data_wo2)
@@ -687,22 +721,25 @@ plot_data_wo$barriers[plot_data_wo$x < 1] <- 1
 plot_data_wo$strength <- " Weak"
 plot_data_wo$belief <- " Optimistic"
 plot_data_wo$label <- paste0("RR = ",
-                             round(median(posteriors_wo$exptrt), 2),
+                             round(median(ratio_wo), 2),
                              "\n", "95% CrI: (",
-                             round(quantile(posteriors_wo$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wo$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_wo, 0.025), 2), ", ",
+                             round(quantile(ratio_wo, 0.975), 2), ")")
 
-posteriors_sp$exptrt <- exp(posteriors_sp$Trt)
-temp_plot <- ggplot(posteriors_sp, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_sp), aes(x = ratio_sp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_sp <- p$data[[1]][, c(1, 2)]
 plot_data_sp$Distribution <- "Posterior"
 
-plot_data_sp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_sp2$y <- dnorm(log(plot_data_sp2$x), p_mean, sp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_sp),
+                                       apply(pred0_sp, 1, mean), p_mean,
+                                       sp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sp2 <- p$data[[1]][, c(1, 2)]
 plot_data_sp2$Distribution <- "Prior"
 
 plot_data_sp <- rbind(plot_data_sp, plot_data_sp2)
@@ -711,22 +748,25 @@ plot_data_sp$barriers[plot_data_sp$x < 1] <- 1
 plot_data_sp$strength <- "Strong"
 plot_data_sp$belief <- "Pessimistic"
 plot_data_sp$label <- paste0("RR = ",
-                             round(median(posteriors_sp$exptrt), 2),
+                             round(median(ratio_sp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_sp$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_sp$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_sp, 0.025), 2), ", ",
+                             round(quantile(ratio_sp, 0.975), 2), ")")
 
-posteriors_mp$exptrt <- exp(posteriors_mp$Trt)
-temp_plot <- ggplot(posteriors_mp, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_mp), aes(x = ratio_mp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_mp <- p$data[[1]][, c(1, 2)]
 plot_data_mp$Distribution <- "Posterior"
 
-plot_data_mp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_mp2$y <- dnorm(log(plot_data_mp2$x), p_mean, mp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_mp),
+                                       apply(pred0_mp, 1, mean), p_mean,
+                                       mp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_mp2 <- p$data[[1]][, c(1, 2)]
 plot_data_mp2$Distribution <- "Prior"
 
 plot_data_mp <- rbind(plot_data_mp, plot_data_mp2)
@@ -735,22 +775,25 @@ plot_data_mp$barriers[plot_data_mp$x < 1] <- 1
 plot_data_mp$strength <- "Moderate"
 plot_data_mp$belief <- "Pessimistic"
 plot_data_mp$label <- paste0("RR = ",
-                             round(median(posteriors_mp$exptrt), 2),
+                             round(median(ratio_mp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_mp$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_mp$exptrt,
-                                            0.975), 2), ")")
+                             round(quantile(ratio_mp, 0.025), 2), ", ",
+                             round(quantile(ratio_mp, 0.975), 2), ")")
 
-posteriors_wp$exptrt <- exp(posteriors_wp$Trt)
-temp_plot <- ggplot(posteriors_wp, aes(x = exptrt)) +
+temp_plot <- ggplot(data.frame(ratio_wp), aes(x = ratio_wp)) +
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_wp <- p$data[[1]][, c(1, 2)]
 plot_data_wp$Distribution <- "Posterior"
 
-plot_data_wp2 <- data.frame(x = seq(0.33, 3, 0.001))
-plot_data_wp2$y <- dnorm(log(plot_data_wp2$x), p_mean, wp_sd)
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_wp),
+                                       apply(pred0_wp, 1, mean), p_mean,
+                                       wp_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_wp2 <- p$data[[1]][, c(1, 2)]
 plot_data_wp2$Distribution <- "Prior"
 
 plot_data_wp <- rbind(plot_data_wp, plot_data_wp2)
@@ -759,12 +802,10 @@ plot_data_wp$barriers[plot_data_wp$x < 1] <- 1
 plot_data_wp$strength <- " Weak"
 plot_data_wp$belief <- "Pessimistic"
 plot_data_wp$label <- paste0("RR = ",
-                             round(median(posteriors_wp$exptrt), 2),
+                             round(median(ratio_wp), 2),
                              "\n", "95% CI: (",
-                             round(quantile(posteriors_wp$exptrt,
-                                            0.025), 2), ", ",
-                             round(quantile(posteriors_wp$exptrt,
-                                            0.0975), 2), ")")
+                             round(quantile(ratio_wp, 0.025), 2), ", ",
+                             round(quantile(ratio_wp, 0.975), 2), ")")
 
 plot_data <- rbind(plot_data_sn, plot_data_mn, plot_data_wn,
                    plot_data_so, plot_data_mo, plot_data_wo,
@@ -780,107 +821,80 @@ f_labels <-
              Distribution = rep("Posterior", 9),
              barriers = rep(0, 9),
              label = c(paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_so$exptrt)),
+                              sprintf("%.2f", median(ratio_so)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_so$exptrt,
+                              sprintf("%.2f", quantile(ratio_so,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_so$exptrt,
+                              sprintf("%.2f", quantile(ratio_so,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_mn$exptrt)),
+                              sprintf("%.2f", median(ratio_mn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mn$exptrt,
+                              sprintf("%.2f", quantile(ratio_mn,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mn$exptrt,
+                              sprintf("%.2f", quantile(ratio_mn,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_wp$exptrt)),
+                              sprintf("%.2f", median(ratio_wp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wp$exptrt,
+                              sprintf("%.2f", quantile(ratio_wp,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wp$exptrt,
+                              sprintf("%.2f", quantile(ratio_wp,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_mo$exptrt)),
+                              sprintf("%.2f", median(ratio_mo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mo$exptrt,
+                              sprintf("%.2f", quantile(ratio_mo,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mo$exptrt,
+                              sprintf("%.2f", quantile(ratio_mo,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_wn$exptrt)),
+                              sprintf("%.2f", median(ratio_wn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wn$exptrt,
+                              sprintf("%.2f", quantile(ratio_wn,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wn$exptrt,
+                              sprintf("%.2f", quantile(ratio_wn,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_sp$exptrt)),
+                              sprintf("%.2f", median(ratio_sp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_sp$exptrt,
+                              sprintf("%.2f", quantile(ratio_sp,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_sp$exptrt,
+                              sprintf("%.2f", quantile(ratio_sp,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_wo$exptrt)),
+                              sprintf("%.2f", median(ratio_wo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wo$exptrt,
+                              sprintf("%.2f", quantile(ratio_wo,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_wo$exptrt,
+                              sprintf("%.2f", quantile(ratio_wo,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_sn$exptrt)),
+                              sprintf("%.2f", median(ratio_sn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_sn$exptrt,
+                              sprintf("%.2f", quantile(ratio_sn,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_sn$exptrt,
+                              sprintf("%.2f", quantile(ratio_sn,
                                                        0.975)), ")"),
                        paste0("Median RR = ",
-                              sprintf("%.2f",
-                                      median(posteriors_mp$exptrt)),
+                              sprintf("%.2f", median(ratio_mp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mp$exptrt,
+                              sprintf("%.2f", quantile(ratio_mp,
                                                        0.025)), ", ",
-                              sprintf("%.2f",
-                                      quantile(posteriors_mp$exptrt,
+                              sprintf("%.2f", quantile(ratio_mp,
                                                        0.975)), ")")))
 
 # Make figure for RR scale
 plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
-  facet_grid(belief ~ strength, scales = "free") +
+  facet_grid(belief ~ strength, scales = "free", switch = "y") +
   labs(x = "Relative Risk", y = "Density") +
   scale_x_continuous(trans = "log", labels = seq(0.5, 3, by = 0.5),
                      breaks = seq(0.5, 3, by = 0.5)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(0.33, 3.4),
-                  ylim = c(0, 3.75)) +
+  scale_y_continuous(expand = c(0, 0), position = "right") +
+  coord_cartesian(xlim = c(0.5, 3.4),
+                  ylim = c(0, 4.75)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
@@ -892,3 +906,8 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
   geom_line() +
   geom_text(data = f_labels, size = 2,
             aes(x = 2.25, y = 3, label = label))
+
+# Output figure
+pdf("posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+fig2
+dev.off()
