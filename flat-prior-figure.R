@@ -48,7 +48,7 @@ dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
 dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
 thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
                    prior = flat_prior, family = "bernoulli", seed = 1234,
-                   iter = 5000, chains = 8)
+                   iter = 10000, chains = 8)
 
 pred1 <- posterior_epred(thapca_flat,
                          newdata = mutate(thapca_flat$data, Trt = 1))
@@ -95,7 +95,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 3, 6, 8), ],
+                   c(1, 3, 8, 10), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 3.2, y = 0.9, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -160,7 +160,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > -0.01 & x < 0.01)[
-                   c(1, 9, 23, 31), ],
+                   c(1, 7, 21, 27), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -192,7 +192,7 @@ dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
 dat_secondary1$AgeFactor <- as.factor(dat_secondary1$AgeGroup)
 thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_primary,
                     prior = flat_prior, family = "bernoulli",
-                    seed = 1234, iter = 5000, chains = 8)
+                    seed = 1234, iter = 10000, chains = 8)
 
 pred1 <- posterior_epred(thapca_flat2,
                          newdata = mutate(thapca_flat2$data, Trt = 1))
@@ -239,7 +239,7 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > 1/1.05 & x < 1.05)[
-                   c(1, 8, 19, 26), ],
+                   c(1, 6, 18, 23), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 1.8, y = 1.8, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -304,7 +304,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > -0.01 & x < 0.01)[
-                   c(1, 7, 16, 22), ],
+                   c(1, 7, 17, 23), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -327,6 +327,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   annotate("segment", x = 0.160, xend = 0.160, y = 6.8, yend = 7.07) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
+
 
 # Combine figures
 # Both figures exported as landscape PDFs with 6 in x 10 in dimensions
@@ -352,41 +353,3 @@ figure2 <- fill_panel(figure2, fig4)
 pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
 figure2
 dev.off()
-
-
-
-
-# Explore conditional effects
-thapca_flat3 <- brm(PrimaryEndpoint ~ Trt*AgeFactor,
-                    data = dat_primary, prior = flat_prior,
-                    family = "bernoulli", seed = 1234)
-pred11 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 1,
-                                           AgeFactor = 1))
-pred01 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 0,
-                                           AgeFactor = 1))
-
-diff1 <- apply(pred11, 1, mean) - apply(pred01, 1, mean)
-sum(diff1 < 0) / length(diff1)
-
-pred12 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 1,
-                                           AgeFactor = 2))
-pred02 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 0,
-                                           AgeFactor = 2))
-
-diff2 <- apply(pred12, 1, mean) - apply(pred02, 1, mean)
-sum(diff2 < 0) / length(diff2)
-
-
-pred13 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 1,
-                                           AgeFactor = 3))
-pred03 <- posterior_epred(thapca_flat3,
-                          newdata = mutate(thapca_flat3$data, Trt = 0,
-                                           AgeFactor = 3))
-
-diff3 <- apply(pred13, 1, mean) - apply(pred03, 1, mean)
-sum(diff3 < 0) / length(diff3)
