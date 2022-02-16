@@ -476,7 +476,7 @@ ft2 <- flextable(df2) %>%
   theme_zebra()
 ft2 <- width(ft2, j = 3, width = 1.5)
 
-# Export table to Word
+# Export table to Word (pull flat prior values from flat-prior-figure.R)
 read_docx() %>% 
   body_add_par("Benefit Table (RR Scale)") %>% 
   body_add_flextable(value = ft2) %>% 
