@@ -209,7 +209,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                      labels = seq(-0.1, 0.2, by = 0.05),
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(-0.13, 0.3),
+  coord_cartesian(xlim = c(-0.13, 0.33),
                   ylim = c(0, 9.5)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
@@ -239,13 +239,13 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
            fill = "#9ECAE1") +
   annotate("rect", xmin = 0.130, xmax = 0.145, ymin = 7.65, ymax = 8.25,
            fill = "#3182BD") +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.15, ymax = 7.45,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 6.75, ymax = 7.35,
            fill = "#3182BD") +
-  annotate("segment", x = 0.152, xend = 0.152, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.154, xend = 0.154, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.156, xend = 0.156, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.158, xend = 0.158, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.160, xend = 0.160, y = 6.8, yend = 7.07) +
+  annotate("segment", x = 0.1465, xend = 0.1465, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1495, xend = 0.1495, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1525, xend = 0.1525, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1555, xend = 0.1555, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1585, xend = 0.1585, y = 5.85, yend = 6.45) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
@@ -351,7 +351,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                      labels = seq(-0.1, 0.2, by = 0.05),
                      breaks = seq(-0.1, 0.2, by = 0.05)) +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(-0.13, 0.3),
+  coord_cartesian(xlim = c(-0.13, 0.33),
                   ylim = c(0, 9.5)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
@@ -375,19 +375,19 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                           "\n", "P(Severe Harm) = ",
                           round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.85, ymax = 8.15,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 8.55, ymax = 9.15,
            fill = "#DEEBF7") +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.5, ymax = 7.8,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.65, ymax = 8.25,
            fill = "#9ECAE1") +
-  annotate("rect", xmin = 0.144, xmax = 0.152, ymin = 7.5, ymax = 7.8,
+  annotate("rect", xmin = 0.130, xmax = 0.145, ymin = 7.65, ymax = 8.25,
            fill = "#3182BD") +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.15, ymax = 7.45,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 6.75, ymax = 7.35,
            fill = "#3182BD") +
-  annotate("segment", x = 0.152, xend = 0.152, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.154, xend = 0.154, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.156, xend = 0.156, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.158, xend = 0.158, y = 6.8, yend = 7.07) +
-  annotate("segment", x = 0.160, xend = 0.160, y = 6.8, yend = 7.07) +
+  annotate("segment", x = 0.1465, xend = 0.1465, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1495, xend = 0.1495, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1525, xend = 0.1525, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1555, xend = 0.1555, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 0.1585, xend = 0.1585, y = 5.85, yend = 6.45) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
