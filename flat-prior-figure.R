@@ -233,13 +233,13 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                           "\n", "P(Severe Harm) < 0.01",
                           #round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.85, ymax = 8.15,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 8.55, ymax = 9.15,
            fill = "#DEEBF7") +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.5, ymax = 7.8,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.65, ymax = 8.25,
            fill = "#9ECAE1") +
-  annotate("rect", xmin = 0.144, xmax = 0.152, ymin = 7.5, ymax = 7.8,
+  annotate("rect", xmin = 0.130, xmax = 0.145, ymin = 7.65, ymax = 8.25,
            fill = "#3182BD") +
-  annotate("rect", xmin = 0.152, xmax = 0.160, ymin = 7.15, ymax = 7.45,
+  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.15, ymax = 7.45,
            fill = "#3182BD") +
   annotate("segment", x = 0.152, xend = 0.152, y = 6.8, yend = 7.07) +
   annotate("segment", x = 0.154, xend = 0.154, y = 6.8, yend = 7.07) +
@@ -406,7 +406,7 @@ pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
 figure
 dev.off()
 
-# Bayesian analyses on RD scale
+# Then Bayesian analyses on RD scale
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
 figure2 <- fill_panel(figure2, fig2)
@@ -444,4 +444,33 @@ figure3 <- fill_panel(figure3, fig3)
 # Output pdf of RR figure, dims may need to be changed
 pdf("pvf-flat-prior-RR-figure.pdf", width = 9.75, height = 6)
 figure3
+dev.off()
+
+# All RD scale analyses
+figure4 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
+                              height = 125)
+figure4 <- fill_panel(figure4,
+                      pvf2$plot +
+                        geom_hline(yintercept = c(0.05, 0.1, 0.2),
+                                   linetype = 2) +
+                        theme(axis.text.x = element_text(size = 8),
+                              axis.text.y = element_text(size = 8),
+                              axis.title.y.left = element_text(size = 10),
+                              axis.title.y.right = element_text(size = 10),
+                              axis.title.x = element_text(size = 10)))
+figure4 <- fill_panel(figure4, fig2)
+figure4 <- fill_panel(figure4,
+                      pvf4$plot +
+                        geom_hline(yintercept = c(0.05, 0.1, 0.2),
+                                   linetype = 2) +
+                        theme(axis.text.x = element_text(size = 8),
+                              axis.text.y = element_text(size = 8),
+                              axis.title.y.left = element_text(size = 10),
+                              axis.title.y.right = element_text(size = 10),
+                              axis.title.x = element_text(size = 10)))
+figure4 <- fill_panel(figure4, fig4)
+
+# Output pdf of RR figure, dims may need to be changed
+pdf("pvf-flat-prior-RD-figure.pdf", width = 9.75, height = 6)
+figure4
 dev.off()
