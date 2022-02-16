@@ -66,14 +66,15 @@ pvf1 <- conf_dist(estimate = coef(mod_primary_rr)[2],
                   plot_counternull = FALSE, plot = TRUE)
 
 # Primary outcome RD scale
-pvf2 <- conf_dist(estimate = coef(mod_primary_rd)[2],
-                  stderr = summary(mod_primary_rd)$coefficients[2, 2],
+pvf2 <- conf_dist(estimate = 100*coef(mod_primary_rd)[2],
+                  stderr = 100*summary(mod_primary_rd)$coefficients[2, 2],
                   type = "logreg", plot_type = "p_val",
                   n_values = 1e4L,
                   null_values = c(0), trans = "identity",
                   alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Risk Difference", ylab = "P-value (two-sided)",
+                  xlab = "Absolute Risk Difference (%)",
+                  ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
                   plot_counternull = FALSE, plot = TRUE)
@@ -91,14 +92,15 @@ pvf3 <- conf_dist(estimate = coef(mod_secondary_rr)[2],
                   plot_counternull = FALSE, plot = TRUE)
 
 # Primary outcome RD scale
-pvf4 <- conf_dist(estimate = coef(mod_secondary_rd)[2],
-                  stderr = summary(mod_secondary_rd)$coefficients[2, 2],
+pvf4 <- conf_dist(estimate = 100*coef(mod_secondary_rd)[2],
+                  stderr = 100*summary(mod_secondary_rd)$coefficients[2, 2],
                   type = "logreg", plot_type = "p_val",
                   n_values = 1e4L,
                   null_values = c(0), trans = "identity",
                   alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Risk Difference", ylab = "P-value (two-sided)",
+                  xlab = "Absolute Risk Difference (%)",
+                  ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
                   plot_counternull = FALSE, plot = TRUE)
@@ -186,12 +188,12 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 #######################################################################
 # Primary outcome on RD scale
-diff <- apply(pred1, 1, mean) - apply(pred0, 1, mean)
+diff <- 100*(apply(pred1, 1, mean) - apply(pred0, 1, mean))
 
 # Some summaries used for plot legend
 any_harm <- sum(diff < 0) / length(diff)
-severe_harm <- sum(diff < -0.05) / length(diff)
-rope <- sum(diff < 0.01 & diff > -0.01) / length(diff)
+severe_harm <- sum(diff < -5) / length(diff)
+rope <- sum(diff < 1 & diff > -1) / length(diff)
 
 # Second figure panel
 temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
@@ -200,52 +202,47 @@ p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
 plot_data$barriers <- 0
 plot_data$barriers[plot_data$x < 0] <- 1
-plot_data$barriers[plot_data$x < -0.05] <- 2
+plot_data$barriers[plot_data$x < -5] <- 2
 
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Risk Difference", y = "Density") +
+  labs(x = "Absolute Risk Difference (%)", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
-                     labels = seq(-0.1, 0.2, by = 0.05),
-                     breaks = seq(-0.1, 0.2, by = 0.05)) +
+                     labels = seq(-10, 20, by = 5),
+                     breaks = seq(-10, 20, by = 5)) +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(-0.13, 0.33),
-                  ylim = c(0, 9.5)) +
+  coord_cartesian(xlim = c(-13, 33),
+                  ylim = c(0, 0.095)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
-  #geom_segment(inherit.aes = FALSE,
-  #data = subset(plot_data, x > 1/1.05 & x < 1.05)[
-  #seq(1, nrow(subset(plot_data, x > 1/1.05 & x < 1.05)),
-  # 5), ],
-  #aes(x = x, y = 0, xend = x, yend = y)) +
   geom_hline(yintercept = 0, color = "black",
              linetype = 1) +
   theme_classic() +
   scale_fill_brewer(guide = "none") +
   geom_segment(inherit.aes = FALSE,
                data =
-                 subset(plot_data, x > -0.01 & x < 0.01)[
+                 subset(plot_data, x > -1 & x < 1)[
                    c(1, 7, 21, 27), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
-  annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
+  annotate("text", x = 16.5, y = 0.075, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
                           "\n", "P(Harm) = ", round(any_harm, 2),
                           "\n", "P(Severe Harm) < 0.01",
                           #round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 8.55, ymax = 9.15,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0855, ymax = 0.0915,
            fill = "#DEEBF7") +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.65, ymax = 8.25,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0765, ymax = 0.0825,
            fill = "#9ECAE1") +
-  annotate("rect", xmin = 0.130, xmax = 0.145, ymin = 7.65, ymax = 8.25,
+  annotate("rect", xmin = 13.0, xmax = 14.5, ymin = 0.0765, ymax = 0.0825,
            fill = "#3182BD") +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 6.75, ymax = 7.35,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0675, ymax = 0.0735,
            fill = "#3182BD") +
-  annotate("segment", x = 0.1465, xend = 0.1465, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1495, xend = 0.1495, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1525, xend = 0.1525, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1555, xend = 0.1555, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1585, xend = 0.1585, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 14.65, xend = 14.65, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 14.95, xend = 14.95, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.25, xend = 15.25, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.55, xend = 15.55, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.85, xend = 15.85, y = 0.0585, yend = 0.0645) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
@@ -290,11 +287,6 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
                   ylim = c(0, 2)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
-  #geom_segment(inherit.aes = FALSE,
-  #data = subset(plot_data, x > 1/1.05 & x < 1.05)[
-  #seq(1, nrow(subset(plot_data, x > 1/1.05 & x < 1.05)),
-  # 5), ],
-  #aes(x = x, y = 0, xend = x, yend = y)) +
   geom_hline(yintercept = 0, color = "black",
              linetype = 1) +
   theme_classic() +
@@ -328,12 +320,12 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 #######################################################################
 # Secondary outcome on RD scale
-diff <- apply(pred1, 1, mean) - apply(pred0, 1, mean)
+diff <- 100*(apply(pred1, 1, mean) - apply(pred0, 1, mean))
 
 # Some summaries used for plot legend
 any_harm <- sum(diff < 0) / length(diff)
-severe_harm <- sum(diff < -0.05) / length(diff)
-rope <- sum(diff < 0.01 & diff > -0.01) / length(diff)
+severe_harm <- sum(diff < -5) / length(diff)
+rope <- sum(diff < 1 & diff > -1) / length(diff)
 
 # Fourth figure panel
 temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
@@ -342,52 +334,47 @@ p <- ggplot_build(temp_plot)
 plot_data <- p$data[[1]][, c(1, 2)]
 plot_data$barriers <- 0
 plot_data$barriers[plot_data$x < 0] <- 1
-plot_data$barriers[plot_data$x < -0.05] <- 2
+plot_data$barriers[plot_data$x < -5] <- 2
 
 fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Risk Difference", y = "Density") +
+  labs(x = "Absolute Risk Difference (%)", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
-                     labels = seq(-0.1, 0.2, by = 0.05),
-                     breaks = seq(-0.1, 0.2, by = 0.05)) +
+                     labels = seq(-10, 20, by = 5),
+                     breaks = seq(-10, 20, by = 5)) +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(xlim = c(-0.13, 0.33),
-                  ylim = c(0, 9.5)) +
+  coord_cartesian(xlim = c(-13, 33),
+                  ylim = c(0, 0.095)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
-  #geom_segment(inherit.aes = FALSE,
-  #data = subset(plot_data, x > 1/1.05 & x < 1.05)[
-  #seq(1, nrow(subset(plot_data, x > 1/1.05 & x < 1.05)),
-  # 5), ],
-  #aes(x = x, y = 0, xend = x, yend = y)) +
   geom_hline(yintercept = 0, color = "black",
              linetype = 1) +
   theme_classic() +
   scale_fill_brewer(guide = "none") +
   geom_segment(inherit.aes = FALSE,
                data =
-                 subset(plot_data, x > -0.01 & x < 0.01)[
-                   c(1, 7, 17, 23), ],
+                 subset(plot_data, x > -1 & x < 1)[
+                   c(1, 8, 21, 28), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
-  annotate("text", x = 0.165, y = 7.5, size = 3, hjust = 0,
+  annotate("text", x = 16.5, y = 0.075, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
                           "\n", "P(Harm) = ", round(any_harm, 2),
                           "\n", "P(Severe Harm) = ",
                           round(severe_harm, 2),
                           "\n", "ROPE = ", round(rope, 2))) +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 8.55, ymax = 9.15,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0855, ymax = 0.0915,
            fill = "#DEEBF7") +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 7.65, ymax = 8.25,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0765, ymax = 0.0825,
            fill = "#9ECAE1") +
-  annotate("rect", xmin = 0.130, xmax = 0.145, ymin = 7.65, ymax = 8.25,
+  annotate("rect", xmin = 13.0, xmax = 14.5, ymin = 0.0765, ymax = 0.0825,
            fill = "#3182BD") +
-  annotate("rect", xmin = 0.145, xmax = 0.160, ymin = 6.75, ymax = 7.35,
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0675, ymax = 0.0735,
            fill = "#3182BD") +
-  annotate("segment", x = 0.1465, xend = 0.1465, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1495, xend = 0.1495, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1525, xend = 0.1525, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1555, xend = 0.1555, y = 5.85, yend = 6.45) +
-  annotate("segment", x = 0.1585, xend = 0.1585, y = 5.85, yend = 6.45) +
+  annotate("segment", x = 14.65, xend = 14.65, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 14.95, xend = 14.95, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.25, xend = 15.25, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.55, xend = 15.55, y = 0.0585, yend = 0.0645) +
+  annotate("segment", x = 15.85, xend = 15.85, y = 0.0585, yend = 0.0645) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
