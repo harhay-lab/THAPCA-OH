@@ -9,11 +9,12 @@ library(broom)
 library(ggpubr)
 library(parameters)
 library(multipanelfigure)
+library(pvaluefunctions)
 library(sanon)
 #library(rstanarm)
 
 # Load trial data
-dat <- read.csv("../outcomes.csv")
+dat <- read.csv("/Users/blette/Downloads/outcomes.csv")
 
 #######################################################################
 # Replicate reported results
@@ -24,28 +25,87 @@ mantelhaen.test(dat_primary$TreatRand, dat_primary$PrimaryEndpoint,
 mantelhaen.test(dat_primary$TreatRand, dat_primary$PrimaryEndpoint,
                 dat_primary$AgeGroup, correct = F)
 
-mod_primary <- glm(PrimaryEndpoint ~ TreatRand + factor(AgeGroup),
-                   data = dat_primary,
-                   family = binomial(link = "log"))
+dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
+dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
+mod_primary_rr <- glm(PrimaryEndpoint ~ Trt + AgeFactor,
+                      data = dat_primary,
+                      family = binomial(link = "log"))
+mod_primary_rd <- glm(PrimaryEndpoint ~ Trt + AgeFactor,
+                      data = dat_primary,
+                      family = binomial(link = "identity"))
 
 # Secondary analyses
 dat_secondary1 <- dat[dat$SurviveM12 != 97, ]
 mantelhaen.test(dat_secondary1$TreatRand, dat_secondary1$SurviveM12,
                 dat_secondary1$AgeGroup, correct = F)
 
+dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
+dat_secondary1$AgeFactor <- as.factor(dat_secondary1$AgeGroup)
+mod_secondary_rr <- glm(SurviveM12 ~ Trt + AgeFactor,
+                        data = dat_secondary1,
+                        family = binomial(link = "log"))
+mod_secondary_rd <- glm(SurviveM12 ~ Trt + AgeFactor,
+                        data = dat_secondary1,
+                        family = binomial(link = "identity"))
+
 dat_secondary2 <- dat[dat$SurviveM12 != 97 & !is.na(dat$DeltaVabs), ]
 summary(sanon(DeltaVabs ~ grp(TreatRand) + strt(AgeGroup),
               data = dat_secondary2))
 
-#######################################################################
-# Bayesian re-analysis of primary outcome
+# Make p-value function figures
+# Primary outcome RR scale
+pvf1 <- conf_dist(estimate = coef(mod_primary_rr)[2],
+                  stderr = summary(mod_primary_rr)$coefficients[2, 2],
+                  type = "logreg", plot_type = "p_val",
+                  n_values = 1e4L, conf_level = c(0.95, 0.90, 0.80),
+                  null_values = c(0), trans = "exp", alternative = "two_sided",
+                  log_yaxis = TRUE, cut_logyaxis = 0.05,
+                  xlab = "Relative Risk",
+                  together = FALSE, plot_p_limit = 1 - 0.999,
+                  plot_counternull = FALSE, plot = TRUE)
 
-# Flat prior analysis
+# Primary outcome RD scale
+pvf2 <- conf_dist(estimate = coef(mod_primary_rd)[2],
+                  stderr = summary(mod_primary_rd)$coefficients[2, 2],
+                  type = "logreg", plot_type = "p_val",
+                  n_values = 1e4L, conf_level = c(0.95, 0.90, 0.80),
+                  null_values = c(0), trans = "identity",
+                  alternative = "two_sided",
+                  log_yaxis = TRUE, cut_logyaxis = 0.05,
+                  xlab = "Risk Difference",
+                  together = FALSE, plot_p_limit = 1 - 0.999,
+                  plot_counternull = FALSE, plot = TRUE)
+
+# Secondary outcome RR scale
+pvf3 <- conf_dist(estimate = coef(mod_secondary_rr)[2],
+                  stderr = summary(mod_secondary_rr)$coefficients[2, 2],
+                  type = "logreg", plot_type = "p_val",
+                  n_values = 1e4L, conf_level = c(0.95, 0.90, 0.80),
+                  null_values = c(0), trans = "exp", alternative = "two_sided",
+                  log_yaxis = TRUE, cut_logyaxis = 0.05,
+                  xlab = "Relative Risk",
+                  together = FALSE, plot_p_limit = 1 - 0.999,
+                  plot_counternull = FALSE, plot = TRUE)
+
+# Primary outcome RD scale
+pvf4 <- conf_dist(estimate = coef(mod_secondary_rd)[2],
+                  stderr = summary(mod_secondary_rd)$coefficients[2, 2],
+                  type = "logreg", plot_type = "p_val",
+                  n_values = 1e4L, conf_level = c(0.95, 0.90, 0.80),
+                  null_values = c(0), trans = "identity",
+                  alternative = "two_sided",
+                  log_yaxis = TRUE, cut_logyaxis = 0.05,
+                  xlab = "Risk Difference",
+                  together = FALSE, plot_p_limit = 1 - 0.999,
+                  plot_counternull = FALSE, plot = TRUE)
+
+
+#######################################################################
+# Bayesian re-analysis of primary outcome using flat priors
+
 # SD = 100 ensures that the prior is uninformative
 flat_prior <- prior(normal(0, 1000), class = "b")
 
-dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
-dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
 thapca_flat <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
                    prior = flat_prior, family = "bernoulli", seed = 1234,
                    iter = 10000, chains = 8)
@@ -56,6 +116,7 @@ pred1 <- posterior_epred(thapca_flat,
 pred0 <- posterior_epred(thapca_flat,
                          newdata = mutate(thapca_flat$data, Trt = 0))
 
+# First do relative risk scale
 ratio <- apply(pred1, 1, mean) / apply(pred0, 1, mean)
 
 # Some summaries used for plot legend
@@ -188,8 +249,6 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 # Bayesian re-analysis of secondary outcome
 
 # Flat prior
-dat_secondary1$Trt <- abs(2 - dat_secondary1$TreatRand)
-dat_secondary1$AgeFactor <- as.factor(dat_secondary1$AgeGroup)
 thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_primary,
                     prior = flat_prior, family = "bernoulli",
                     seed = 1234, iter = 10000, chains = 8)
@@ -330,10 +389,9 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 
 # Combine figures
-# Both figures exported as landscape PDFs with 6 in x 10 in dimensions
-#ggarrange(fig1, fig3, ncol = 2)
-#ggarrange(fig2, fig4, ncol = 2)
 
+# First do Bayesian analyses on RR scale
+# Both figures exported as landscape PDFs with 6 in x 10 in dimensions
 figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
 figure <- fill_panel(figure, fig1)
@@ -344,6 +402,7 @@ pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
 figure
 dev.off()
 
+# Bayesian analyses on RD scale
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
 figure2 <- fill_panel(figure2, fig2)
@@ -352,4 +411,17 @@ figure2 <- fill_panel(figure2, fig4)
 # Output pdf of RD figure, dims may need to be changed
 pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
 figure2
+dev.off()
+
+# All RR scale analyses
+figure3 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
+                              height = 125)
+figure3 <- fill_panel(figure3, pvf1$plot)
+figure3 <- fill_panel(figure3, fig1)
+figure3 <- fill_panel(figure3, pvf3$plot)
+figure3 <- fill_panel(figure3, fig3)
+
+# Output pdf of RR figure, dims may need to be changed
+pdf("flat-prior-RR-figure-test.pdf", width = 10, height = 6)
+figure3
 dev.off()
