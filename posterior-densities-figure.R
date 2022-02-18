@@ -12,7 +12,7 @@ library(sanon)
 #library(rstanarm)
 
 # Load trial data
-dat <- read.csv("../outcomes.csv")
+dat <- read.csv("/Users/blette/Downloads/outcomes.csv")
 dat_primary <- dat[dat$Primary == 1 & dat$PrimaryEndpoint != 97, ]
 dat_primary$Trt <- abs(2 - dat_primary$TreatRand)
 dat_primary$AgeFactor <- as.factor(dat_primary$AgeGroup)
@@ -54,7 +54,7 @@ pred0_so <- posterior_epred(so_mod,
                             newdata = mutate(so_mod$data, Trt = 0))
 
 ratio_so <- apply(pred1_so, 1, mean) / apply(pred0_so, 1, mean)
-diff_so <- apply(pred1_so, 1, mean) - apply(pred0_so, 1, mean)
+diff_so <- 100*(apply(pred1_so, 1, mean) - apply(pred0_so, 1, mean))
 
 # Moderate optimistic prior
 mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
@@ -71,7 +71,7 @@ pred0_mo <- posterior_epred(mo_mod,
                             newdata = mutate(mo_mod$data, Trt = 0))
 
 ratio_mo <- apply(pred1_mo, 1, mean) / apply(pred0_mo, 1, mean)
-diff_mo <- apply(pred1_mo, 1, mean) - apply(pred0_mo, 1, mean)
+diff_mo <- 100*(apply(pred1_mo, 1, mean) - apply(pred0_mo, 1, mean))
 
 # Weak optimistic prior
 wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
@@ -88,7 +88,7 @@ pred0_wo <- posterior_epred(wo_mod,
                             newdata = mutate(wo_mod$data, Trt = 0))
 
 ratio_wo <- apply(pred1_wo, 1, mean) / apply(pred0_wo, 1, mean)
-diff_wo <- apply(pred1_wo, 1, mean) - apply(pred0_wo, 1, mean)
+diff_wo <- 100*(apply(pred1_wo, 1, mean) - apply(pred0_wo, 1, mean))
 
 # Neutral priors
 # Strong neutral prior
@@ -106,7 +106,7 @@ pred0_sn <- posterior_epred(sn_mod,
                             newdata = mutate(sn_mod$data, Trt = 0))
 
 ratio_sn <- apply(pred1_sn, 1, mean) / apply(pred0_sn, 1, mean)
-diff_sn <- apply(pred1_sn, 1, mean) - apply(pred0_sn, 1, mean)
+diff_sn <- 100*(apply(pred1_sn, 1, mean) - apply(pred0_sn, 1, mean))
 
 # Moderate neutral prior
 mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.5),
@@ -123,7 +123,7 @@ pred0_mn <- posterior_epred(mn_mod,
                             newdata = mutate(mn_mod$data, Trt = 0))
 
 ratio_mn <- apply(pred1_mn, 1, mean) / apply(pred0_mn, 1, mean)
-diff_mn <- apply(pred1_mn, 1, mean) - apply(pred0_mn, 1, mean)
+diff_mn <- 100*(apply(pred1_mn, 1, mean) - apply(pred0_mn, 1, mean))
 
 # Weak neutral prior
 wn_sd <- 3
@@ -138,7 +138,7 @@ pred0_wn <- posterior_epred(wn_mod,
                             newdata = mutate(wn_mod$data, Trt = 0))
 
 ratio_wn <- apply(pred1_wn, 1, mean) / apply(pred0_wn, 1, mean)
-diff_wn <- apply(pred1_wn, 1, mean) - apply(pred0_wn, 1, mean)
+diff_wn <- 100*(apply(pred1_wn, 1, mean) - apply(pred0_wn, 1, mean))
 
 # Pessimistic priors
 # Strong pessimistic prior
@@ -156,7 +156,7 @@ pred0_sp <- posterior_epred(sp_mod,
                             newdata = mutate(sp_mod$data, Trt = 0))
 
 ratio_sp <- apply(pred1_sp, 1, mean) / apply(pred0_sp, 1, mean)
-diff_sp <- apply(pred1_sp, 1, mean) - apply(pred0_sp, 1, mean)
+diff_sp <- 100*(apply(pred1_sp, 1, mean) - apply(pred0_sp, 1, mean))
 
 # Moderate pessimistic prior
 mp_sd <- mo_sd
@@ -172,7 +172,7 @@ pred0_mp <- posterior_epred(mp_mod,
                             newdata = mutate(mp_mod$data, Trt = 0))
 
 ratio_mp <- apply(pred1_mp, 1, mean) / apply(pred0_mp, 1, mean)
-diff_mp <- apply(pred1_mp, 1, mean) - apply(pred0_mp, 1, mean)
+diff_mp <- 100*(apply(pred1_mp, 1, mean) - apply(pred0_mp, 1, mean))
 
 # Weak pessimistic prior
 wp_sd <- wo_sd
@@ -188,7 +188,7 @@ pred0_wp <- posterior_epred(wp_mod,
                             newdata = mutate(wp_mod$data, Trt = 0))
 
 ratio_wp <- apply(pred1_wp, 1, mean) / apply(pred0_wp, 1, mean)
-diff_wp <- apply(pred1_wp, 1, mean) - apply(pred0_wp, 1, mean)
+diff_wp <- 100*(apply(pred1_wp, 1, mean) - apply(pred0_wp, 1, mean))
 
 
 #######################################################################
@@ -197,7 +197,7 @@ diff_wp <- apply(pred1_wp, 1, mean) - apply(pred0_wp, 1, mean)
 approxPrior <- function(num, baserisk, mean, sd) {
   logORprior <- rnorm(num, mean, sd)
   intermed <- exp(logORprior)*baserisk / (1 - baserisk)
-  return(intermed / (1 + intermed) - baserisk)
+  return(100*(intermed / (1 + intermed) - baserisk))
 }
 
 # Can I pull baseline risk for each model output line?
@@ -226,11 +226,11 @@ plot_data_sn$barriers <- 0
 plot_data_sn$barriers[plot_data_sn$x < 0] <- 1
 plot_data_sn$strength <- "Strong"
 plot_data_sn$belief <- "Neutral"
-plot_data_sn$label <- paste0("RD = ",
-                             round(median(diff_sn), 2),
+plot_data_sn$label <- paste0("ABD = ",
+                             round(median(diff_sn), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_sn, 0.025), 2), ", ",
-                             round(quantile(diff_sn, 0.975), 2), ")")
+                             round(quantile(diff_sn, 0.025), 1), ", ",
+                             round(quantile(diff_sn, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_mn), aes(x = diff_mn)) +
   geom_density()
@@ -253,11 +253,11 @@ plot_data_mn$barriers <- 0
 plot_data_mn$barriers[plot_data_mn$x < 0] <- 1
 plot_data_mn$strength <- "Moderate"
 plot_data_mn$belief <- "Neutral"
-plot_data_mn$label <- paste0("RD = ",
-                             round(median(diff_mn), 2),
+plot_data_mn$label <- paste0("ABD = ",
+                             round(median(diff_mn), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_mn, 0.025), 2), ", ",
-                             round(quantile(diff_mn, 0.975), 2), ")")
+                             round(quantile(diff_mn, 0.025), 1), ", ",
+                             round(quantile(diff_mn, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_wn), aes(x = diff_wn)) +
   geom_density()
@@ -280,11 +280,11 @@ plot_data_wn$barriers <- 0
 plot_data_wn$barriers[plot_data_wn$x < 0] <- 1
 plot_data_wn$strength <- " Weak"
 plot_data_wn$belief <- "Neutral"
-plot_data_wn$label <- paste0("RD = ",
-                             round(median(diff_wn), 2),
+plot_data_wn$label <- paste0("ABD = ",
+                             round(median(diff_wn), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_wn, 0.025), 2), ", ",
-                             round(quantile(diff_wn, 0.975), 2), ")")
+                             round(quantile(diff_wn, 0.025), 1), ", ",
+                             round(quantile(diff_wn, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_so), aes(x = diff_so)) +
   geom_density()
@@ -307,11 +307,11 @@ plot_data_so$barriers <- 0
 plot_data_so$barriers[plot_data_so$x < 0] <- 1
 plot_data_so$strength <- "Strong"
 plot_data_so$belief <- " Optimistic"
-plot_data_so$label <- paste0("RD = ",
-                             round(median(diff_so), 2),
+plot_data_so$label <- paste0("ABD = ",
+                             round(median(diff_so), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_so, 0.025), 2), ", ",
-                             round(quantile(diff_so, 0.975), 2), ")")
+                             round(quantile(diff_so, 0.025), 1), ", ",
+                             round(quantile(diff_so, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_mo), aes(x = diff_mo)) +
   geom_density()
@@ -334,11 +334,11 @@ plot_data_mo$barriers <- 0
 plot_data_mo$barriers[plot_data_mo$x < 0] <- 1
 plot_data_mo$strength <- "Moderate"
 plot_data_mo$belief <- " Optimistic"
-plot_data_mo$label <- paste0("RD = ",
-                             round(median(diff_mo), 2),
+plot_data_mo$label <- paste0("ABD = ",
+                             round(median(diff_mo), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_mo, 0.025), 2), ", ",
-                             round(quantile(diff_mo, 0.975), 2), ")")
+                             round(quantile(diff_mo, 0.025), 1), ", ",
+                             round(quantile(diff_mo, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_wo), aes(x = diff_wo)) +
   geom_density()
@@ -361,11 +361,11 @@ plot_data_wo$barriers <- 0
 plot_data_wo$barriers[plot_data_wo$x < 0] <- 1
 plot_data_wo$strength <- " Weak"
 plot_data_wo$belief <- " Optimistic"
-plot_data_wo$label <- paste0("RD = ",
-                             round(median(diff_wo), 2),
+plot_data_wo$label <- paste0("ABD = ",
+                             round(median(diff_wo), 1),
                              "\n", "95% CrI: (",
-                             round(quantile(diff_wo, 0.025), 2), ", ",
-                             round(quantile(diff_wo, 0.975), 2), ")")
+                             round(quantile(diff_wo, 0.025), 1), ", ",
+                             round(quantile(diff_wo, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_sp), aes(x = diff_sp)) +
   geom_density()
@@ -388,11 +388,11 @@ plot_data_sp$barriers <- 0
 plot_data_sp$barriers[plot_data_sp$x < 0] <- 1
 plot_data_sp$strength <- "Strong"
 plot_data_sp$belief <- "Pessimistic"
-plot_data_sp$label <- paste0("RD = ",
-                             round(median(diff_sp), 2),
+plot_data_sp$label <- paste0("ABD = ",
+                             round(median(diff_sp), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_sp, 0.025), 2), ", ",
-                             round(quantile(diff_sp, 0.975), 2), ")")
+                             round(quantile(diff_sp, 0.025), 1), ", ",
+                             round(quantile(diff_sp, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_mp), aes(x = diff_mp)) +
   geom_density()
@@ -415,11 +415,11 @@ plot_data_mp$barriers <- 0
 plot_data_mp$barriers[plot_data_mp$x < 0] <- 1
 plot_data_mp$strength <- "Moderate"
 plot_data_mp$belief <- "Pessimistic"
-plot_data_mp$label <- paste0("RD = ",
-                             round(median(diff_mp), 2),
+plot_data_mp$label <- paste0("ABD = ",
+                             round(median(diff_mp), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_mp, 0.025), 2), ", ",
-                             round(quantile(diff_mp, 0.975), 2), ")")
+                             round(quantile(diff_mp, 0.025), 1), ", ",
+                             round(quantile(diff_mp, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_wp), aes(x = diff_wp)) +
   geom_density()
@@ -442,11 +442,11 @@ plot_data_wp$barriers <- 0
 plot_data_wp$barriers[plot_data_wp$x < 0] <- 1
 plot_data_wp$strength <- " Weak"
 plot_data_wp$belief <- "Pessimistic"
-plot_data_wp$label <- paste0("RD = ",
-                             round(median(diff_wp), 2),
+plot_data_wp$label <- paste0("ABD = ",
+                             round(median(diff_wp), 1),
                              "\n", "95% CI: (",
-                             round(quantile(diff_wp, 0.025), 2), ", ",
-                             round(quantile(diff_wp, 0.975), 2), ")")
+                             round(quantile(diff_wp, 0.025), 1), ", ",
+                             round(quantile(diff_wp, 0.975), 1), ")")
 
 plot_data <- rbind(plot_data_sn, plot_data_mn, plot_data_wn,
                    plot_data_so, plot_data_mo, plot_data_wo,
@@ -461,68 +461,68 @@ f_labels <-
                           " Weak", "Strong", "Moderate"),
              Distribution = rep("Posterior", 9),
              barriers = rep(0, 9),
-             label = c(paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_so)),
+             label = c(paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_so)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_so,
+                              sprintf("%.1f", quantile(diff_so,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_so,
+                              sprintf("%.1f", quantile(diff_so,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_mn)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_mn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_mn,
+                              sprintf("%.1f", quantile(diff_mn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_mn,
+                              sprintf("%.1f", quantile(diff_mn,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_wp)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_wp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_wp,
+                              sprintf("%.1f", quantile(diff_wp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_wp,
+                              sprintf("%.1f", quantile(diff_wp,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_mo)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_mo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_mo,
+                              sprintf("%.1f", quantile(diff_mo,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_mo,
+                              sprintf("%.1f", quantile(diff_mo,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_wn)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_wn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_wn,
+                              sprintf("%.1f", quantile(diff_wn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_wn,
+                              sprintf("%.1f", quantile(diff_wn,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_sp)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_sp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_sp,
+                              sprintf("%.1f", quantile(diff_sp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_sp,
+                              sprintf("%.1f", quantile(diff_sp,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_wo)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_wo)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_wo,
+                              sprintf("%.1f", quantile(diff_wo,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_wo,
+                              sprintf("%.1f", quantile(diff_wo,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_sn)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_sn)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_sn,
+                              sprintf("%.1f", quantile(diff_sn,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_sn,
+                              sprintf("%.1f", quantile(diff_sn,
                                                        0.975)), ")"),
-                       paste0("Median RD = ",
-                              sprintf("%.2f", median(diff_mp)),
+                       paste0("Median ABD = ",
+                              sprintf("%.1f", median(diff_mp)),
                               "\n", "95% CrI: (",
-                              sprintf("%.2f", quantile(diff_mp,
+                              sprintf("%.1f", quantile(diff_mp,
                                                        0.025)), ", ",
-                              sprintf("%.2f", quantile(diff_mp,
+                              sprintf("%.1f", quantile(diff_mp,
                                                        0.975)), ")")))
 
 # Make figure for RD scale
@@ -530,12 +530,12 @@ plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
   facet_grid(belief ~ strength, scales = "free", switch = "y") +
-  labs(x = "Risk Difference", y = "Density") +
-  scale_x_continuous(labels = seq(-0.2, 0.2, by = 0.1),
-                     breaks = seq(-0.2, 0.2, by = 0.1)) +
+  labs(x = "Absolute Benefit Difference (%)", y = "Density") +
+  scale_x_continuous(labels = seq(-20, 20, by = 10),
+                     breaks = seq(-20, 20, by = 10)) +
   scale_y_continuous(expand = c(0, 0), position = "right") +
-  coord_cartesian(xlim = c(-0.25, 0.3),
-                  ylim = c(0, 25)) +
+  coord_cartesian(xlim = c(-25, 30),
+                  ylim = c(0, 0.25)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
@@ -546,7 +546,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
              linetype = 1) +
   geom_line() +
   geom_text(data = f_labels, size = 2,
-            aes(x = 0.2, y = 16, label = label))
+            aes(x = 20, y = 0.16, label = label))
 
 # Output figure
 pdf("posterior-density-RD-figure.pdf", width = 8.5, height = 6)
@@ -585,7 +585,7 @@ plot_data_sn$barriers <- 0
 plot_data_sn$barriers[plot_data_sn$x < 1] <- 1
 plot_data_sn$strength <- "Strong"
 plot_data_sn$belief <- "Neutral"
-plot_data_sn$label <- paste0("RR = ",
+plot_data_sn$label <- paste0("RB = ",
                              round(median(ratio_sn), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_sn, 0.025), 2), ", ",
@@ -612,7 +612,7 @@ plot_data_mn$barriers <- 0
 plot_data_mn$barriers[plot_data_mn$x < 1] <- 1
 plot_data_mn$strength <- "Moderate"
 plot_data_mn$belief <- "Neutral"
-plot_data_mn$label <- paste0("RR = ",
+plot_data_mn$label <- paste0("RB = ",
                              round(median(ratio_mn), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_mn, 0.025), 2), ", ",
@@ -639,7 +639,7 @@ plot_data_wn$barriers <- 0
 plot_data_wn$barriers[plot_data_wn$x < 1] <- 1
 plot_data_wn$strength <- " Weak"
 plot_data_wn$belief <- "Neutral"
-plot_data_wn$label <- paste0("RR = ",
+plot_data_wn$label <- paste0("RB = ",
                              round(median(ratio_wn), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_wn, 0.025), 2), ", ",
@@ -666,7 +666,7 @@ plot_data_so$barriers <- 0
 plot_data_so$barriers[plot_data_so$x < 1] <- 1
 plot_data_so$strength <- "Strong"
 plot_data_so$belief <- " Optimistic"
-plot_data_so$label <- paste0("RR = ",
+plot_data_so$label <- paste0("RB = ",
                              round(median(ratio_so), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_so, 0.025), 2), ", ",
@@ -693,7 +693,7 @@ plot_data_mo$barriers <- 0
 plot_data_mo$barriers[plot_data_mo$x < 1] <- 1
 plot_data_mo$strength <- "Moderate"
 plot_data_mo$belief <- " Optimistic"
-plot_data_mo$label <- paste0("RR = ",
+plot_data_mo$label <- paste0("RB = ",
                              round(median(ratio_mo), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_mo, 0.025), 2), ", ",
@@ -720,7 +720,7 @@ plot_data_wo$barriers <- 0
 plot_data_wo$barriers[plot_data_wo$x < 1] <- 1
 plot_data_wo$strength <- " Weak"
 plot_data_wo$belief <- " Optimistic"
-plot_data_wo$label <- paste0("RR = ",
+plot_data_wo$label <- paste0("RB = ",
                              round(median(ratio_wo), 2),
                              "\n", "95% CrI: (",
                              round(quantile(ratio_wo, 0.025), 2), ", ",
@@ -747,7 +747,7 @@ plot_data_sp$barriers <- 0
 plot_data_sp$barriers[plot_data_sp$x < 1] <- 1
 plot_data_sp$strength <- "Strong"
 plot_data_sp$belief <- "Pessimistic"
-plot_data_sp$label <- paste0("RR = ",
+plot_data_sp$label <- paste0("RB = ",
                              round(median(ratio_sp), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_sp, 0.025), 2), ", ",
@@ -774,7 +774,7 @@ plot_data_mp$barriers <- 0
 plot_data_mp$barriers[plot_data_mp$x < 1] <- 1
 plot_data_mp$strength <- "Moderate"
 plot_data_mp$belief <- "Pessimistic"
-plot_data_mp$label <- paste0("RR = ",
+plot_data_mp$label <- paste0("RB = ",
                              round(median(ratio_mp), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_mp, 0.025), 2), ", ",
@@ -801,7 +801,7 @@ plot_data_wp$barriers <- 0
 plot_data_wp$barriers[plot_data_wp$x < 1] <- 1
 plot_data_wp$strength <- " Weak"
 plot_data_wp$belief <- "Pessimistic"
-plot_data_wp$label <- paste0("RR = ",
+plot_data_wp$label <- paste0("RB = ",
                              round(median(ratio_wp), 2),
                              "\n", "95% CI: (",
                              round(quantile(ratio_wp, 0.025), 2), ", ",
@@ -820,63 +820,63 @@ f_labels <-
                           " Weak", "Strong", "Moderate"),
              Distribution = rep("Posterior", 9),
              barriers = rep(0, 9),
-             label = c(paste0("Median RR = ",
+             label = c(paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_so)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_so,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_so,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_mn)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_mn,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_mn,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_wp)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_wp,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_wp,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_mo)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_mo,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_mo,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_wn)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_wn,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_wn,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_sp)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_sp,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_sp,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_wo)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_wo,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_wo,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_sn)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_sn,
                                                        0.025)), ", ",
                               sprintf("%.2f", quantile(ratio_sn,
                                                        0.975)), ")"),
-                       paste0("Median RR = ",
+                       paste0("Median RB = ",
                               sprintf("%.2f", median(ratio_mp)),
                               "\n", "95% CrI: (",
                               sprintf("%.2f", quantile(ratio_mp,
@@ -889,7 +889,7 @@ plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                               lty = Distribution)) +
   facet_grid(belief ~ strength, scales = "free", switch = "y") +
-  labs(x = "Relative Risk", y = "Density") +
+  labs(x = "Relative Benefit", y = "Density") +
   scale_x_continuous(trans = "log", labels = seq(0.5, 3, by = 0.5),
                      breaks = seq(0.5, 3, by = 0.5)) +
   scale_y_continuous(expand = c(0, 0), position = "right") +
