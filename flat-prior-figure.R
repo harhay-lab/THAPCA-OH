@@ -60,7 +60,7 @@ pvf1 <- conf_dist(estimate = coef(mod_primary_rr)[2],
                   n_values = 1e4L,
                   null_values = c(0), trans = "exp", alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Relative Risk", ylab = "P-value (two-sided)",
+                  xlab = "Relative Benefit", ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
                   plot_counternull = FALSE, plot = TRUE)
@@ -73,7 +73,7 @@ pvf2 <- conf_dist(estimate = 100*coef(mod_primary_rd)[2],
                   null_values = c(0), trans = "identity",
                   alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Absolute Risk Difference (%)",
+                  xlab = "Absolute Benefit Difference (%)",
                   ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
@@ -86,7 +86,7 @@ pvf3 <- conf_dist(estimate = coef(mod_secondary_rr)[2],
                   n_values = 1e4L,
                   null_values = c(0), trans = "exp", alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Relative Risk", ylab = "P-value (two-sided)",
+                  xlab = "Relative Benefit", ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
                   plot_counternull = FALSE, plot = TRUE)
@@ -99,7 +99,7 @@ pvf4 <- conf_dist(estimate = 100*coef(mod_secondary_rd)[2],
                   null_values = c(0), trans = "identity",
                   alternative = "two_sided",
                   log_yaxis = TRUE, cut_logyaxis = 0.05,
-                  xlab = "Absolute Risk Difference (%)",
+                  xlab = "Absolute Benefit Difference (%)",
                   ylab = "P-value (two-sided)",
                   ylab_sec = "P-value (one-sided)",
                   together = FALSE, plot_p_limit = 1 - 0.999,
@@ -151,7 +151,7 @@ plot_data$barriers[plot_data$x < 1/1.25] <- 2
 
 fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Relative Risk", y = "Density") +
+  labs(x = "Relative Benefit", y = "Density") +
   scale_x_continuous(expand = c(0, 0), trans = "log",
                      labels = seq(0.5, 4, by = 0.5),
                      breaks = seq(0.5, 4, by = 0.5)) +
@@ -226,7 +226,7 @@ plot_data$barriers[plot_data$x < -5] <- 2
 
 fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Absolute Risk Difference (%)", y = "Density") +
+  labs(x = "Absolute Benefit Difference (%)", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(-10, 20, by = 5),
                      breaks = seq(-10, 20, by = 5)) +
@@ -298,7 +298,7 @@ plot_data$barriers[plot_data$x < 1/1.25] <- 2
 
 fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Relative Risk", y = "Density") +
+  labs(x = "Relative Benefit", y = "Density") +
   scale_x_continuous(expand = c(0, 0), trans = "log",
                      labels = seq(0.5, 4, by = 0.5),
                      breaks = seq(0.5, 4, by = 0.5)) +
@@ -358,7 +358,7 @@ plot_data$barriers[plot_data$x < -5] <- 2
 
 fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_line() +
-  labs(x = "Absolute Risk Difference (%)", y = "Density") +
+  labs(x = "Absolute Benefit Difference (%)", y = "Density") +
   scale_x_continuous(expand = c(0, 0),
                      labels = seq(-10, 20, by = 5),
                      breaks = seq(-10, 20, by = 5)) +
@@ -374,7 +374,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_segment(inherit.aes = FALSE,
                data =
                  subset(plot_data, x > -1 & x < 1)[
-                   c(1, 8, 21, 28), ],
+                   c(1, 6, 18, 23), ],
                aes(x = x, y = 0, xend = x, yend = y)) +
   annotate("text", x = 16.5, y = 0.075, size = 3, hjust = 0,
            label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
@@ -401,7 +401,7 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 # Combine figures
 
-# First do Bayesian analyses on RR scale
+# First do Bayesian analyses on RR scale (old version of fig)
 # Both figures exported as landscape PDFs with 6 in x 10 in dimensions
 figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
@@ -413,7 +413,7 @@ pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
 figure
 dev.off()
 
-# Then Bayesian analyses on RD scale
+# Then Bayesian analyses on RD scale (old version of fig)
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
 figure2 <- fill_panel(figure2, fig2)
@@ -424,7 +424,7 @@ pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
 figure2
 dev.off()
 
-# All RR scale analyses
+# All RR scale analyses (new version of fig)
 figure3 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
                               height = 125)
 figure3 <- fill_panel(figure3,
@@ -453,7 +453,7 @@ pdf("pvf-flat-prior-RR-figure.pdf", width = 9.75, height = 6)
 figure3
 dev.off()
 
-# All RD scale analyses
+# All RD scale analyses (new version of fig)
 figure4 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
                               height = 125)
 figure4 <- fill_panel(figure4,
