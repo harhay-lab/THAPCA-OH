@@ -419,9 +419,9 @@ ft <- width(ft, j = 3, width = 1.5)
 
 # Export table to Word
 read_docx() %>% 
-  body_add_par("Benefit Table (RD Scale)") %>% 
+  body_add_par("Neuro Benefit Table (RD Scale)") %>% 
   body_add_flextable(value = ft) %>% 
-  print(target = "benefit_table_RD.docx")
+  print(target = "neuro_benefit_table_RD.docx")
 
 
 # Now do table on relative risk scale
@@ -478,6 +478,6 @@ ft2 <- width(ft2, j = 3, width = 1.5)
 
 # Export table to Word (man. pull flat prior values from flat-prior-figure.R)
 read_docx() %>% 
-  body_add_par("Benefit Table (RR Scale)") %>% 
+  body_add_par("Neuro Benefit Table (RR Scale)") %>% 
   body_add_flextable(value = ft2) %>% 
-  print(target = "benefit_table_RR.docx")
+  print(target = "neuro_benefit_table_RR.docx")
