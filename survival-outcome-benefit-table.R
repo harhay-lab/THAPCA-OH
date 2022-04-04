@@ -1,17 +1,16 @@
 # Clear data and load libraries
 rm(list = ls())
 library(tidyverse)
+library(flextable)
 library(insight)
 library(bayestestR)
 library(cowplot)
 library(brms)
 library(broom)
-library(ggpubr)
 library(parameters)
-library(multipanelfigure)
-library(pvaluefunctions)
 library(sanon)
 #library(rstanarm)
+library(officer)
 
 # Load trial data
 dat <- read.csv("/Users/blette/Downloads/outcomes.csv")
@@ -470,6 +469,6 @@ ft2 <- width(ft2, j = 3, width = 1.5)
 
 # Export table to Word (man. pull flat prior values from flat-prior-figure.R)
 read_docx() %>% 
-  body_add_par("Benefit Table (RR Scale)") %>% 
+  body_add_par("Survival Benefit Table (RR Scale)") %>% 
   body_add_flextable(value = ft2) %>% 
-  print(target = "benefit_table_RR.docx")
+  print(target = "survival_benefit_table_RR.docx")
