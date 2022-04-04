@@ -270,7 +270,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 # Bayesian re-analysis of secondary outcome
 
 # Flat prior
-thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_primary,
+thapca_flat2 <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
                     prior = flat_prior, family = "bernoulli",
                     seed = 1234, iter = 10000, chains = 8)
 
