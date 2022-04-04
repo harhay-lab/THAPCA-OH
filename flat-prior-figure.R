@@ -130,7 +130,7 @@ any_harm <- sum(ratio < 1) / length(ratio)
 severe_harm <- sum(ratio < 1/1.25) / length(ratio)
 rope <- sum(ratio < 1.05 & ratio > 1/1.05) / length(ratio)
 
-# Some summaries used for separate table (see survival-benefit-table.R)
+# Some summaries used for separate table (see neuro-outcome-benefit-table.R)
 fl_med_r <- median(ratio)
 fl_low_r <- quantile(ratio, 0.025)
 fl_up_r <- quantile(ratio, 0.975)
@@ -205,7 +205,7 @@ any_harm <- sum(diff < 0) / length(diff)
 severe_harm <- sum(diff < -5) / length(diff)
 rope <- sum(diff < 1 & diff > -1) / length(diff)
 
-# Some summaries used for separate table (see survival-benefit-table.R)
+# Some summaries used for separate table (see neuro-outcome-benefit-table.R)
 fl_med_d <- median(diff)
 fl_low_d <- quantile(diff, 0.025)
 fl_up_d <- quantile(diff, 0.975)
@@ -287,6 +287,16 @@ any_harm <- sum(ratio < 1) / length(ratio)
 severe_harm <- sum(ratio < 1/1.25) / length(ratio)
 rope <- sum(ratio < 1.05 & ratio > 1/1.05) / length(ratio)
 
+# Some summaries used for separate table (see survival-outcome-benefit-table.R)
+fl_med_r <- median(ratio)
+fl_low_r <- quantile(ratio, 0.025)
+fl_up_r <- quantile(ratio, 0.975)
+fl1.00 <- mean(ratio > 1)
+fl1.10 <- mean(ratio > 1.1)
+fl1.25 <- mean(ratio > 1.25)
+fl1.50 <- mean(ratio > 1.5)
+fl2.00 <- mean(ratio > 2)
+
 # Third figure panel
 temp_plot <- ggplot(data.frame(ratio), aes(x = ratio)) +
   geom_density()
@@ -346,6 +356,16 @@ diff <- 100*(apply(pred1, 1, mean) - apply(pred0, 1, mean))
 any_harm <- sum(diff < 0) / length(diff)
 severe_harm <- sum(diff < -5) / length(diff)
 rope <- sum(diff < 1 & diff > -1) / length(diff)
+
+# Some summaries used for separate table (see survival-outcome-benefit-table.R)
+fl_med_d <- median(diff)
+fl_low_d <- quantile(diff, 0.025)
+fl_up_d <- quantile(diff, 0.975)
+fl0 <- mean(diff > 0)
+fl2 <- mean(diff > 2)
+fl5 <- mean(diff > 5)
+fl10 <- mean(diff > 10)
+fl15 <- mean(diff > 15)
 
 # Fourth figure panel
 temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
