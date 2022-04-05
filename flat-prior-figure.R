@@ -501,3 +501,59 @@ figure4 <- fill_panel(figure4, fig4)
 pdf("pvf-flat-prior-RD-figure.pdf", width = 9.75, height = 6)
 figure4
 dev.off()
+
+
+
+##########################################################################
+# Run model diagnostics
+
+# Borrow diagnostics function from COVID Steroid 2 Trial analysis
+# MCMC diagnostics
+diag_fit <- function(fit, extra_groups = NULL, bars = TRUE) {
+  
+  # Print fit (includes Rhats and bulk and tail ESS)
+  print(fit)
+  if (any(rhat(fit) > 1.01)) {
+    warning("One or more Rhats > 1.01")
+  } else {
+    message("All Rhats <= 1.01")
+  }
+  
+  nam <- names(fit$fit)
+  walk(nam, ~{print(mcmc_trace(fit, pars = .x))})
+  walk(nam, ~{print(mcmc_dens_overlay(fit, pars = .x))})
+  if (bars) {
+    print(pp_check(fit, nsamples = 100, type = "bars"))
+    print(pp_check(fit, nsamples = 100, type = "bars_grouped", group = "Trt"))
+  } else {
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay"))
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                   group = "Trt"))
+  }
+  print(pp_check(fit, type = "stat_grouped", stat = "mean", group = "Trt"))
+  
+  if (!is.null(extra_groups)) {
+    
+    for (i in seq_along(extra_groups)) {
+      
+      if (bars) {
+        print(pp_check(fit, nsamples = 100, type = "bars_grouped",
+                       group = extra_groups[i]))
+      } else {
+        print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                       group = extra_groups[i]))
+      }
+      print(pp_check(fit, type = "stat_grouped", stat = "mean",
+                     group = extra_groups[i]))
+      
+    }
+    
+  }
+  
+  print(loo(fit, cores = 4, reloo = TRUE)) # RELOO IF NECESSARY
+  invisible(fit)
+  
+}
+
+diag_fit(thapca_flat)
+diag_fit(thapca_flat2)
