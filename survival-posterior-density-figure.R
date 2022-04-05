@@ -3,6 +3,7 @@ rm(list = ls())
 library(tidyverse)
 library(flextable)
 library(insight)
+library(bayesplot)
 library(bayestestR)
 library(cowplot)
 library(brms)
@@ -44,7 +45,7 @@ so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
                     priormean = o_mean)
 stanvars <- stanvar(o_mean) + stanvar(so_sd)
 so_prior <- prior(normal(o_mean, so_sd), class = "b", coef = Trt)
-so_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+so_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = so_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -61,7 +62,7 @@ mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
                     priormean = o_mean)
 stanvars <- stanvar(o_mean) + stanvar(mo_sd)
 mo_prior <- prior(normal(o_mean, mo_sd), class = "b", coef = Trt)
-mo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+mo_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = mo_prior, stanvars = stanvars, iter = 10000,
               family = "bernoulli", seed = 1234, chains = 8)
 
@@ -78,7 +79,7 @@ wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
                     priormean = o_mean)
 stanvars <- stanvar(o_mean) + stanvar(wo_sd)
 wo_prior <- prior(normal(o_mean, wo_sd), class = "b", coef = Trt)
-wo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+wo_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = wo_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -96,7 +97,7 @@ sn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(1/1.5),
                     priormean = 0)
 stanvars <- stanvar(sn_sd)
 sn_prior <- prior(normal(0, sn_sd), class = "b", coef = Trt)
-sn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+sn_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = sn_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -113,7 +114,7 @@ mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.5),
                     priormean = 0)
 stanvars <- stanvar(mn_sd)
 mn_prior <- prior(normal(0, mn_sd), class = "b", coef = Trt)
-mn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+mn_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = mn_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -128,7 +129,7 @@ diff_mn <- 100*(apply(pred1_mn, 1, mean) - apply(pred0_mn, 1, mean))
 # Weak neutral prior
 wn_sd <- 3
 wn_prior <- prior(normal(0, 3), class = "b", coef = Trt)
-wn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+wn_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = wn_prior, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -146,7 +147,7 @@ p_mean <- log(1/1.25)
 sp_sd <- so_sd
 stanvars <- stanvar(p_mean) + stanvar(sp_sd)
 sp_prior <- prior(normal(p_mean, sp_sd), class = "b", coef = Trt)
-sp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+sp_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = sp_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -162,7 +163,7 @@ diff_sp <- 100*(apply(pred1_sp, 1, mean) - apply(pred0_sp, 1, mean))
 mp_sd <- mo_sd
 stanvars <- stanvar(p_mean) + stanvar(mp_sd)
 mp_prior <- prior(normal(p_mean, mp_sd), class = "b", coef = Trt)
-mp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+mp_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = mp_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -178,7 +179,7 @@ diff_mp <- 100*(apply(pred1_mp, 1, mean) - apply(pred0_mp, 1, mean))
 wp_sd <- wo_sd
 stanvars <- stanvar(p_mean) + stanvar(wp_sd)
 wp_prior <- prior(normal(p_mean, wp_sd), class = "b", coef = Trt)
-wp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
+wp_mod <- brm(SurviveM12 ~ Trt + AgeFactor, data = dat_secondary1,
               prior = wp_prior, stanvars = stanvars, chains = 8,
               family = "bernoulli", seed = 1234, iter = 10000)
 
@@ -535,7 +536,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                      breaks = seq(-20, 20, by = 10)) +
   scale_y_continuous(expand = c(0, 0), position = "right") +
   coord_cartesian(xlim = c(-25, 30),
-                  ylim = c(0, 0.25)) +
+                  ylim = c(0, 0.2)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
@@ -549,7 +550,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 20, y = 0.16, label = label))
 
 # Output figure
-pdf("posterior-density-RD-figure.pdf", width = 8.5, height = 6)
+pdf("survival-posterior-density-RD-figure.pdf", width = 8.5, height = 6)
 fig1
 dev.off()
 
@@ -894,7 +895,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
                      breaks = seq(0.5, 3, by = 0.5)) +
   scale_y_continuous(expand = c(0, 0), position = "right") +
   coord_cartesian(xlim = c(0.5, 3.4),
-                  ylim = c(0, 4.75)) +
+                  ylim = c(0, 5.75)) +
   geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
               show.legend = FALSE) +
   geom_hline(yintercept = 0, color = "black",
@@ -908,6 +909,69 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 2.25, y = 3, label = label))
 
 # Output figure
-pdf("posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+pdf("survival-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
 fig2
 dev.off()
+
+
+
+##########################################################################
+# Run model diagnostics
+
+# Borrow diagnostics function from COVID Steroid 2 Trial analysis
+# MCMC diagnostics
+diag_fit <- function(fit, extra_groups = NULL, bars = TRUE) {
+  
+  # Print fit (includes Rhats and bulk and tail ESS)
+  print(fit)
+  if (any(rhat(fit) > 1.01)) {
+    warning("One or more Rhats > 1.01")
+  } else {
+    message("All Rhats <= 1.01")
+  }
+  
+  nam <- names(fit$fit)
+  walk(nam, ~{print(mcmc_trace(fit, pars = .x))})
+  walk(nam, ~{print(mcmc_dens_overlay(fit, pars = .x))})
+  if (bars) {
+    print(pp_check(fit, nsamples = 100, type = "bars"))
+    print(pp_check(fit, nsamples = 100, type = "bars_grouped", group = "Trt"))
+  } else {
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay"))
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                   group = "Trt"))
+  }
+  print(pp_check(fit, type = "stat_grouped", stat = "mean", group = "Trt"))
+  
+  if (!is.null(extra_groups)) {
+    
+    for (i in seq_along(extra_groups)) {
+      
+      if (bars) {
+        print(pp_check(fit, nsamples = 100, type = "bars_grouped",
+                       group = extra_groups[i]))
+      } else {
+        print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                       group = extra_groups[i]))
+      }
+      print(pp_check(fit, type = "stat_grouped", stat = "mean",
+                     group = extra_groups[i]))
+      
+    }
+    
+  }
+  
+  print(loo(fit, cores = 4, reloo = TRUE)) # RELOO IF NECESSARY
+  invisible(fit)
+  
+}
+
+diag_fit(so_mod)
+diag_fit(mo_mod)
+diag_fit(wo_mod)
+diag_fit(sn_mod)
+diag_fit(mn_mod)
+diag_fit(wn_mod)
+diag_fit(sp_mod)
+diag_fit(mp_mod)
+diag_fit(wp_mod)
