@@ -4,6 +4,7 @@ library(tidyverse)
 library(flextable)
 library(insight)
 library(bayestestR)
+library(bayesplot)
 library(cowplot)
 library(brms)
 library(broom)
@@ -911,3 +912,66 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
 pdf("posterior-density-RR-figure.pdf", width = 8.5, height = 6)
 fig2
 dev.off()
+
+
+
+##########################################################################
+# Run model diagnostics
+
+# Borrow diagnostics function from COVID Steroid 2 Trial analysis
+# MCMC diagnostics
+diag_fit <- function(fit, extra_groups = NULL, bars = TRUE) {
+  
+  # Print fit (includes Rhats and bulk and tail ESS)
+  print(fit)
+  if (any(rhat(fit) > 1.01)) {
+    warning("One or more Rhats > 1.01")
+  } else {
+    message("All Rhats <= 1.01")
+  }
+  
+  nam <- names(fit$fit)
+  walk(nam, ~{print(mcmc_trace(fit, pars = .x))})
+  walk(nam, ~{print(mcmc_dens_overlay(fit, pars = .x))})
+  if (bars) {
+    print(pp_check(fit, nsamples = 100, type = "bars"))
+    print(pp_check(fit, nsamples = 100, type = "bars_grouped", group = "Trt"))
+  } else {
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay"))
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                   group = "Trt"))
+  }
+  print(pp_check(fit, type = "stat_grouped", stat = "mean", group = "Trt"))
+  
+  if (!is.null(extra_groups)) {
+    
+    for (i in seq_along(extra_groups)) {
+      
+      if (bars) {
+        print(pp_check(fit, nsamples = 100, type = "bars_grouped",
+                       group = extra_groups[i]))
+      } else {
+        print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                       group = extra_groups[i]))
+      }
+      print(pp_check(fit, type = "stat_grouped", stat = "mean",
+                     group = extra_groups[i]))
+      
+    }
+    
+  }
+  
+  print(loo(fit, cores = 4, reloo = TRUE)) # RELOO IF NECESSARY
+  invisible(fit)
+  
+}
+
+diag_fit(so_mod)
+diag_fit(mo_mod)
+diag_fit(wo_mod)
+diag_fit(sn_mod)
+diag_fit(mn_mod)
+diag_fit(wn_mod)
+diag_fit(sp_mod)
+diag_fit(mp_mod)
+diag_fit(wp_mod)
