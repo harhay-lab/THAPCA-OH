@@ -550,7 +550,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 20, y = 0.16, label = label))
 
 # Output figure
-pdf("posterior-density-RD-figure.pdf", width = 8.5, height = 6)
+pdf("neuro-posterior-density-RD-figure.pdf", width = 8.5, height = 6)
 fig1
 dev.off()
 
@@ -909,7 +909,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 2.25, y = 3, label = label))
 
 # Output figure
-pdf("posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+pdf("neuro-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
 fig2
 dev.off()
 
