@@ -36,7 +36,7 @@ getPriorSD <- function(priormean = 0,
 
 
 #######################################################################
-# Analysis
+# Analysis for the 9 pre-specified priors
 
 # Optimistic priors
 # Strong optimistic prior
