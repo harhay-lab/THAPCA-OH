@@ -248,37 +248,134 @@ dev.off()
 #######################################################################
 # Now make figure on relative risk scale
 
-# Helper function to get approximate prior on RR scale from log(OR) scale
-approxPrior2 <- function(num, baserisk, mean, sd) {
-  logORprior <- rnorm(num, mean, sd)
-  intermed <- exp(logORprior)*baserisk / (1 - baserisk)
-  return(intermed / (1 + intermed) / baserisk)
-}
-
-# Plot densities for each of the 9 priors
-temp_plot <- ggplot(data.frame(ratio_sn), aes(x = ratio_sn)) +
+# Plot densities for each of the 3 priors
+temp_plot <- ggplot(data.frame(ratio_gf), aes(x = ratio_gf)) +
   geom_density()
 p <- ggplot_build(temp_plot)
-plot_data_sn <- p$data[[1]][, c(1, 2)]
-plot_data_sn$Distribution <- "Posterior"
+plot_data_gf <- p$data[[1]][, c(1, 2)]
+plot_data_gf$Distribution <- "Posterior"
 
 temp_plot <-
-  ggplot(data.frame(pri = approxPrior2(length(ratio_sn),
-                                       apply(pred0_sn, 1, mean), 0,
-                                       sn_sd)),
+  ggplot(data.frame(pri = exp(rnorm(length(ratio_gf), grandfelt_mean,
+                                sqrt(grandfelt_sd^2 / dw)))),
          aes(x = pri)) +
   geom_density()
 p <- ggplot_build(temp_plot)
-plot_data_sn2 <- p$data[[1]][, c(1, 2)]
-plot_data_sn2$Distribution <- "Prior"
+plot_data_gf2 <- p$data[[1]][, c(1, 2)]
+plot_data_gf2$Distribution <- "Prior"
 
-plot_data_sn <- rbind(plot_data_sn, plot_data_sn2)
-plot_data_sn$barriers <- 0
-plot_data_sn$barriers[plot_data_sn$x < 1] <- 1
-plot_data_sn$strength <- "Strong"
-plot_data_sn$belief <- "Neutral"
-plot_data_sn$label <- paste0("RB = ",
-                             round(median(ratio_sn), 2),
+plot_data_gf <- rbind(plot_data_gf, plot_data_gf2)
+plot_data_gf$barriers <- 0
+plot_data_gf$barriers[plot_data_gf$x < 1] <- 1
+plot_data_gf$EBP <- "Grandfelt"
+plot_data_gf$label <- paste0("RB = ",
+                             round(median(ratio_gf), 2),
                              "\n", "95% CI: (",
-                             round(quantile(ratio_sn, 0.025), 2), ", ",
-                             round(quantile(ratio_sn, 0.975), 2), ")")
+                             round(quantile(ratio_gf, 0.025), 2), ", ",
+                             round(quantile(ratio_gf, 0.975), 2), ")")
+
+temp_plot <- ggplot(data.frame(ratio_ttm), aes(x = ratio_ttm)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_ttm <- p$data[[1]][, c(1, 2)]
+plot_data_ttm$Distribution <- "Posterior"
+
+temp_plot <-
+  ggplot(data.frame(pri = exp(rnorm(length(ratio_ttm), ttm_mean,
+                                sqrt(ttm_sd^2 / dw)))),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_ttm2 <- p$data[[1]][, c(1, 2)]
+plot_data_ttm2$Distribution <- "Prior"
+
+plot_data_ttm <- rbind(plot_data_ttm, plot_data_ttm2)
+plot_data_ttm$barriers <- 0
+plot_data_ttm$barriers[plot_data_ttm$x < 1] <- 1
+plot_data_ttm$EBP <- "TTM"
+plot_data_ttm$label <- paste0("RB = ",
+                             round(median(ratio_ttm), 2),
+                             "\n", "95% CI: (",
+                             round(quantile(ratio_ttm, 0.025), 2), ", ",
+                             round(quantile(ratio_ttm, 0.975), 2), ")")
+
+temp_plot <- ggplot(data.frame(ratio_hyp), aes(x = ratio_hyp)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_hyp <- p$data[[1]][, c(1, 2)]
+plot_data_hyp$Distribution <- "Posterior"
+
+temp_plot <-
+  ggplot(data.frame(pri = exp(rnorm(length(ratio_hyp), hyp_mean,
+                                sqrt(hyp_sd^2 / dw)))),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_hyp2 <- p$data[[1]][, c(1, 2)]
+plot_data_hyp2$Distribution <- "Prior"
+
+plot_data_hyp <- rbind(plot_data_hyp, plot_data_hyp2)
+plot_data_hyp$barriers <- 0
+plot_data_hyp$barriers[plot_data_hyp$x < 1] <- 1
+plot_data_hyp$EBP <- "Hyperion"
+plot_data_hyp$label <- paste0("RB = ",
+                             round(median(ratio_hyp), 2),
+                             "\n", "95% CI: (",
+                             round(quantile(ratio_hyp, 0.025), 2), ", ",
+                             round(quantile(ratio_hyp, 0.975), 2), ")")
+
+plot_data <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
+
+f_labels <-
+  data.frame(EBP = c("Grandfelt", "TTM", "Hyperion"),
+             Distribution = rep("Posterior", 3),
+             barriers = rep(0, 9),
+             label = c(paste0("Median RB = ",
+                              sprintf("%.1f", median(ratio_gf)),
+                              "\n", "95% CrI: (",
+                              sprintf("%.1f", quantile(ratio_gf,
+                                                       0.025)), ", ",
+                              sprintf("%.1f", quantile(ratio_gf,
+                                                       0.975)), ")"),
+                       paste0("Median RB = ",
+                              sprintf("%.1f", median(ratio_ttm)),
+                              "\n", "95% CrI: (",
+                              sprintf("%.1f", quantile(ratio_ttm,
+                                                       0.025)), ", ",
+                              sprintf("%.1f", quantile(ratio_ttm,
+                                                       0.975)), ")"),
+                       paste0("Median RB = ",
+                              sprintf("%.1f", median(ratio_hyp)),
+                              "\n", "95% CrI: (",
+                              sprintf("%.1f", quantile(ratio_hyp,
+                                                       0.025)), ", ",
+                              sprintf("%.1f", quantile(ratio_hyp,
+                                                       0.975)), ")")))
+
+# Make figure for RR scale
+plot_data$barriers[plot_data$Distribution == "Prior"] <- NA
+fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
+                              lty = Distribution)) +
+  facet_wrap(~EBP, scales = "free") +
+  labs(x = "Relative Benefit", y = "Density") +
+  scale_x_continuous(trans = "log", labels = seq(0.5, 3, by = 0.5),
+                     breaks = seq(0.5, 3, by = 0.5)) +
+  scale_y_continuous(expand = c(0, 0), position = "right") +
+  coord_cartesian(xlim = c(0.5, 3.4),
+                  ylim = c(0, 5.75)) +
+  geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
+              show.legend = FALSE) +
+  geom_hline(yintercept = 0, color = "black",
+             linetype = 1) +
+  theme_bw() +
+  scale_fill_brewer(guide = "none") +
+  geom_vline(xintercept = 1, color = "black",
+             linetype = 1) +
+  geom_line() +
+  geom_text(data = f_labels, size = 2,
+            aes(x = 2.25, y = 3, label = label))
+
+# Output figure
+pdf("survival-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+fig2
+dev.off()
