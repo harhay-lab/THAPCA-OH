@@ -41,7 +41,7 @@ getPriorSD <- function(priormean = 0,
 
 # Prior using Grandfelt 2021 meta-analysis and 50% weighting
 grandfelt_mean <- log(1.2)
-grandfelt_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.9),
+grandfelt_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.85),
                            priormean = grandfelt_mean)
 dw <- 0.5
 gf_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeFactor2 + AgeFactor3,
@@ -82,7 +82,7 @@ diff_ttm <- 100*(apply(pred1_ttm, 1, mean) - apply(pred0_ttm, 1, mean))
 
 # Prior using Hyperion with 50% weighting
 hyp_mean <- log(1.8)
-hyp_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(1),
+hyp_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.7),
                      priormean = hyp_mean)
 dw <- 0.5
 hyp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeFactor2 + AgeFactor3,
@@ -119,7 +119,7 @@ plot_data_gf$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = approxPrior(length(diff_gf),
-                                      apply(pred0_gf, 1, mean), 0,
+                                      apply(pred0_gf, 1, mean), grandfelt_mean,
                                       sqrt(grandfelt_sd^2 / dw))),
          aes(x = pri)) +
   geom_density()
@@ -145,7 +145,7 @@ plot_data_ttm$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = approxPrior(length(diff_ttm),
-                                      apply(pred0_ttm, 1, mean), 0,
+                                      apply(pred0_ttm, 1, mean), ttm_mean,
                                       sqrt(ttm_sd^2 / dw))),
          aes(x = pri)) +
   geom_density()
@@ -171,7 +171,7 @@ plot_data_hyp$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = approxPrior(length(diff_hyp),
-                                      apply(pred0_hyp, 1, mean), 0,
+                                      apply(pred0_hyp, 1, mean), hyp_mean,
                                       sqrt(hyp_sd^2 / dw))),
          aes(x = pri)) +
   geom_density()
@@ -245,3 +245,40 @@ pdf("ebp-survival-posterior-density-RD-figure.pdf", width = 8.5, height = 6)
 fig1
 dev.off()
 
+#######################################################################
+# Now make figure on relative risk scale
+
+# Helper function to get approximate prior on RR scale from log(OR) scale
+approxPrior2 <- function(num, baserisk, mean, sd) {
+  logORprior <- rnorm(num, mean, sd)
+  intermed <- exp(logORprior)*baserisk / (1 - baserisk)
+  return(intermed / (1 + intermed) / baserisk)
+}
+
+# Plot densities for each of the 9 priors
+temp_plot <- ggplot(data.frame(ratio_sn), aes(x = ratio_sn)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sn <- p$data[[1]][, c(1, 2)]
+plot_data_sn$Distribution <- "Posterior"
+
+temp_plot <-
+  ggplot(data.frame(pri = approxPrior2(length(ratio_sn),
+                                       apply(pred0_sn, 1, mean), 0,
+                                       sn_sd)),
+         aes(x = pri)) +
+  geom_density()
+p <- ggplot_build(temp_plot)
+plot_data_sn2 <- p$data[[1]][, c(1, 2)]
+plot_data_sn2$Distribution <- "Prior"
+
+plot_data_sn <- rbind(plot_data_sn, plot_data_sn2)
+plot_data_sn$barriers <- 0
+plot_data_sn$barriers[plot_data_sn$x < 1] <- 1
+plot_data_sn$strength <- "Strong"
+plot_data_sn$belief <- "Neutral"
+plot_data_sn$label <- paste0("RB = ",
+                             round(median(ratio_sn), 2),
+                             "\n", "95% CI: (",
+                             round(quantile(ratio_sn, 0.025), 2), ", ",
+                             round(quantile(ratio_sn, 0.975), 2), ")")
