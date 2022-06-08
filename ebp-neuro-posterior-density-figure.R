@@ -158,10 +158,10 @@ plot_data_ttm$barriers <- 0
 plot_data_ttm$barriers[plot_data_ttm$x < 0] <- 1
 plot_data_ttm$EBP <- "TTM"
 plot_data_ttm$label <- paste0("ABD = ",
-                             round(median(diff_ttm), 1),
-                             "\n", "95% CI: (",
-                             round(quantile(diff_ttm, 0.025), 1), ", ",
-                             round(quantile(diff_ttm, 0.975), 1), ")")
+                              round(median(diff_ttm), 1),
+                              "\n", "95% CI: (",
+                              round(quantile(diff_ttm, 0.025), 1), ", ",
+                              round(quantile(diff_ttm, 0.975), 1), ")")
 
 temp_plot <- ggplot(data.frame(diff_hyp), aes(x = diff_hyp)) +
   geom_density()
@@ -184,10 +184,10 @@ plot_data_hyp$barriers <- 0
 plot_data_hyp$barriers[plot_data_hyp$x < 0] <- 1
 plot_data_hyp$EBP <- "Hyperion"
 plot_data_hyp$label <- paste0("ABD = ",
-                             round(median(diff_hyp), 1),
-                             "\n", "95% CI: (",
-                             round(quantile(diff_hyp, 0.025), 1), ", ",
-                             round(quantile(diff_hyp, 0.975), 1), ")")
+                              round(median(diff_hyp), 1),
+                              "\n", "95% CI: (",
+                              round(quantile(diff_hyp, 0.025), 1), ", ",
+                              round(quantile(diff_hyp, 0.975), 1), ")")
 
 plot_data <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
 
@@ -241,7 +241,7 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 20, y = 0.16, label = label))
 
 # Output figure
-pdf("ebp-survival-posterior-density-RD-figure.pdf", width = 8.5, height = 6)
+pdf("ebp-neuro-posterior-density-RD-figure.pdf", width = 8.5, height = 6)
 fig1
 dev.off()
 
@@ -257,7 +257,7 @@ plot_data_gf$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = exp(rnorm(length(ratio_gf), grandfelt_mean,
-                                sqrt(grandfelt_sd^2 / dw)))),
+                                    sqrt(grandfelt_sd^2 / dw)))),
          aes(x = pri)) +
   geom_density()
 p <- ggplot_build(temp_plot)
@@ -282,7 +282,7 @@ plot_data_ttm$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = exp(rnorm(length(ratio_ttm), ttm_mean,
-                                sqrt(ttm_sd^2 / dw)))),
+                                    sqrt(ttm_sd^2 / dw)))),
          aes(x = pri)) +
   geom_density()
 p <- ggplot_build(temp_plot)
@@ -294,10 +294,10 @@ plot_data_ttm$barriers <- 0
 plot_data_ttm$barriers[plot_data_ttm$x < 1] <- 1
 plot_data_ttm$EBP <- "TTM"
 plot_data_ttm$label <- paste0("RB = ",
-                             round(median(ratio_ttm), 2),
-                             "\n", "95% CI: (",
-                             round(quantile(ratio_ttm, 0.025), 2), ", ",
-                             round(quantile(ratio_ttm, 0.975), 2), ")")
+                              round(median(ratio_ttm), 2),
+                              "\n", "95% CI: (",
+                              round(quantile(ratio_ttm, 0.025), 2), ", ",
+                              round(quantile(ratio_ttm, 0.975), 2), ")")
 
 temp_plot <- ggplot(data.frame(ratio_hyp), aes(x = ratio_hyp)) +
   geom_density()
@@ -307,7 +307,7 @@ plot_data_hyp$Distribution <- "Posterior"
 
 temp_plot <-
   ggplot(data.frame(pri = exp(rnorm(length(ratio_hyp), hyp_mean,
-                                sqrt(hyp_sd^2 / dw)))),
+                                    sqrt(hyp_sd^2 / dw)))),
          aes(x = pri)) +
   geom_density()
 p <- ggplot_build(temp_plot)
@@ -319,10 +319,10 @@ plot_data_hyp$barriers <- 0
 plot_data_hyp$barriers[plot_data_hyp$x < 1] <- 1
 plot_data_hyp$EBP <- "Hyperion"
 plot_data_hyp$label <- paste0("RB = ",
-                             round(median(ratio_hyp), 2),
-                             "\n", "95% CI: (",
-                             round(quantile(ratio_hyp, 0.025), 2), ", ",
-                             round(quantile(ratio_hyp, 0.975), 2), ")")
+                              round(median(ratio_hyp), 2),
+                              "\n", "95% CI: (",
+                              round(quantile(ratio_hyp, 0.025), 2), ", ",
+                              round(quantile(ratio_hyp, 0.975), 2), ")")
 
 plot_data <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
 
@@ -376,7 +376,7 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 2.25, y = 3, label = label))
 
 # Output figure
-pdf("ebp-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+pdf("ebp-neuro-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
 fig2
 dev.off()
 
