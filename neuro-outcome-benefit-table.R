@@ -9,7 +9,6 @@ library(brms)
 library(broom)
 library(parameters)
 library(sanon)
-#library(rstanarm)
 library(officer)
 
 # Load trial data
@@ -362,14 +361,139 @@ wp1.50 <- mean(ratio_wp > 1.5)
 wp2.00 <- mean(ratio_wp > 2)
 
 
+# Now using evidence-based priors
+library(rstanarm)
+dat_primary$AgeFactor2 <- 1*(dat_primary$AgeGroup == 2)
+dat_primary$AgeFactor3 <- 1*(dat_primary$AgeGroup == 3)
+
+# Prior using Grandfelt 2021 meta-analysis and 50% weighting
+grandfelt_mean <- log(1.2)
+grandfelt_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.85),
+                           priormean = grandfelt_mean)
+dw <- 0.5
+gf_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeFactor2 + AgeFactor3,
+                   data = dat_primary, prior_intercept = normal(0, 100),
+                   prior = normal(location = c(grandfelt_mean, 0, 0),
+                                  scale = c(sqrt(grandfelt_sd^2 / dw),
+                                            100, 100)),
+                   chains = 8, family = binomial(link = "log"),
+                   seed = 1234, iter = 10000)
+
+pred1_gf <- posterior_epred(gf_mod,
+                            newdata = mutate(gf_mod$data, Trt = 1))
+pred0_gf <- posterior_epred(gf_mod,
+                            newdata = mutate(gf_mod$data, Trt = 0))
+
+ratio_gf <- apply(pred1_gf, 1, mean) / apply(pred0_gf, 1, mean)
+diff_gf <- 100*(apply(pred1_gf, 1, mean) - apply(pred0_gf, 1, mean))
+
+gf_med_d <- median(diff_gf)
+gf_low_d <- quantile(diff_gf, 0.025)
+gf_up_d <- quantile(diff_gf, 0.975)
+gf0.00 <- mean(diff_gf > 0)
+gf0.02 <- mean(diff_gf > 2)
+gf0.05 <- mean(diff_gf > 5)
+gf0.10 <- mean(diff_gf > 10)
+gf0.15 <- mean(diff_gf > 15)
+
+gf_med_r <- median(ratio_gf)
+gf_low_r <- quantile(ratio_gf, 0.025)
+gf_up_r <- quantile(ratio_gf, 0.975)
+gf1.00 <- mean(ratio_gf > 1)
+gf1.10 <- mean(ratio_gf > 1.1)
+gf1.25 <- mean(ratio_gf > 1.25)
+gf1.50 <- mean(ratio_gf > 1.5)
+gf2.00 <- mean(ratio_gf > 2)
+
+# Prior using TTM and TTM2 and 50% weighting
+ttm_mean <- log(1)
+ttm_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.9),
+                     priormean = ttm_mean)
+dw <- 0.5
+ttm_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeFactor2 + AgeFactor3,
+                    data = dat_primary, prior_intercept = normal(0, 100),
+                    prior = normal(location = c(ttm_mean, 0, 0),
+                                   scale = c(sqrt(ttm_sd^2 / dw), 100, 100)),
+                    chains = 8, family = binomial(link = "log"),
+                    seed = 1234, iter = 10000)
+
+pred1_ttm <- posterior_epred(ttm_mod,
+                             newdata = mutate(ttm_mod$data, Trt = 1))
+pred0_ttm <- posterior_epred(ttm_mod,
+                             newdata = mutate(ttm_mod$data, Trt = 0))
+
+ratio_ttm <- apply(pred1_ttm, 1, mean) / apply(pred0_ttm, 1, mean)
+diff_ttm <- 100*(apply(pred1_ttm, 1, mean) - apply(pred0_ttm, 1, mean))
+
+ttm_med_d <- median(diff_ttm)
+ttm_low_d <- quantile(diff_ttm, 0.025)
+ttm_up_d <- quantile(diff_ttm, 0.975)
+ttm0.00 <- mean(diff_ttm > 0)
+ttm0.02 <- mean(diff_ttm > 2)
+ttm0.05 <- mean(diff_ttm > 5)
+ttm0.10 <- mean(diff_ttm > 10)
+ttm0.15 <- mean(diff_ttm > 15)
+
+ttm_med_r <- median(ratio_ttm)
+ttm_low_r <- quantile(ratio_ttm, 0.025)
+ttm_up_r <- quantile(ratio_ttm, 0.975)
+ttm1.00 <- mean(ratio_ttm > 1)
+ttm1.10 <- mean(ratio_ttm > 1.1)
+ttm1.25 <- mean(ratio_ttm > 1.25)
+ttm1.50 <- mean(ratio_ttm > 1.5)
+ttm2.00 <- mean(ratio_ttm > 2)
+
+# Prior using Hyperion with 50% weighting
+hyp_mean <- log(1.8)
+hyp_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.7),
+                     priormean = hyp_mean)
+dw <- 0.5
+hyp_mod <- stan_glm(PrimaryEndpoint ~ Trt + AgeFactor2 + AgeFactor3,
+                    data = dat_primary, prior_intercept = normal(0, 100),
+                    prior = normal(location = c(hyp_mean, 0, 0),
+                                   scale = c(sqrt(hyp_sd^2 / dw), 100, 100)),
+                    chains = 8, family = binomial(link = "log"),
+                    seed = 1234, iter = 10000)
+
+pred1_hyp <- posterior_epred(hyp_mod,
+                             newdata = mutate(hyp_mod$data, Trt = 1))
+pred0_hyp <- posterior_epred(hyp_mod,
+                             newdata = mutate(hyp_mod$data, Trt = 0))
+
+ratio_hyp <- apply(pred1_hyp, 1, mean) / apply(pred0_hyp, 1, mean)
+diff_hyp <- 100*(apply(pred1_hyp, 1, mean) - apply(pred0_hyp, 1, mean))
+
+hyp_med_d <- median(diff_hyp)
+hyp_low_d <- quantile(diff_hyp, 0.025)
+hyp_up_d <- quantile(diff_hyp, 0.975)
+hyp0.00 <- mean(diff_hyp > 0)
+hyp0.02 <- mean(diff_hyp > 2)
+hyp0.05 <- mean(diff_hyp > 5)
+hyp0.10 <- mean(diff_hyp > 10)
+hyp0.15 <- mean(diff_hyp > 15)
+
+hyp_med_r <- median(ratio_hyp)
+hyp_low_r <- quantile(ratio_hyp, 0.025)
+hyp_up_r <- quantile(ratio_hyp, 0.975)
+hyp1.00 <- mean(ratio_hyp > 1)
+hyp1.10 <- mean(ratio_hyp > 1.1)
+hyp1.25 <- mean(ratio_hyp > 1.25)
+hyp1.50 <- mean(ratio_hyp > 1.5)
+hyp2.00 <- mean(ratio_hyp > 2)
+
+
 #######################################################################
 # Make benefit tables
 
 # Table on risk difference scale
 df <- data.frame("Prior Belief" = c("Optimistic", "", "",
                                     "Neutral", "", "",
-                                    "Pessimistic", "", ""),
-                 "Strength" = rep(c("Weak", "Moderate", "Strong"), 3),
+                                    "Pessimistic", "", "",
+                                    "EB: Grandfelt",
+                                    "EB: TTM",
+                                    "EB: Hyperion"),
+                 "Strength" = c(rep(c("Weak", "Moderate", "Strong"), 3),
+                                "", "", ""),
                  "Median" = c(paste(round(wo_med_d, 1), " (",
                                     round(wo_low_d, 1), ", ",
                                     round(wo_up_d, 1), ")", sep = ""),
@@ -396,22 +520,36 @@ df <- data.frame("Prior Belief" = c("Optimistic", "", "",
                                     round(mp_up_d, 1), ")", sep = ""),
                               paste(round(sp_med_d, 1), " (",
                                     round(sp_low_d, 1), ", ",
-                                    round(sp_up_d, 1), ")", sep = "")),
+                                    round(sp_up_d, 1), ")", sep = ""),
+                              paste(round(gf_med_d, 1), " (",
+                                    round(gf_low_d, 1), ", ",
+                                    round(gf_up_d, 1), ")", sep = ""),
+                              paste(round(ttm_med_d, 1), " (",
+                                    round(ttm_low_d, 1), ", ",
+                                    round(ttm_up_d, 1), ")", sep = ""),
+                              paste(round(hyp_med_d, 1), " (",
+                                    round(hyp_low_d, 1), ", ",
+                                    round(hyp_up_d, 1), ")", sep = "")),
                  ">0" = 100*round(c(wo0.00, mo0.00, so0.00,
                                     wn0.00, mn0.00, sn0.00,
-                                    wp0.00, mp0.00, sp0.00), 2),
+                                    wp0.00, mp0.00, sp0.00,
+                                    gf0.00, ttm0.00, hyp0.00), 2),
                  ">2" = 100*round(c(wo0.02, mo0.02, so0.02,
                                     wn0.02, mn0.02, sn0.02,
-                                    wp0.02, mp0.02, sp0.02), 2),
+                                    wp0.02, mp0.02, sp0.02,
+                                    gf0.02, ttm0.02, hyp0.02), 2),
                  ">5" = 100*round(c(wo0.05, mo0.05, so0.05,
                                     wn0.05, mn0.05, sn0.05,
-                                    wp0.05, mp0.05, sp0.05), 2),
+                                    wp0.05, mp0.05, sp0.05,
+                                    gf0.05, ttm0.05, hyp0.05), 2),
                  ">10" = 100*round(c(wo0.10, mo0.10, so0.10,
                                      wn0.10, mn0.10, sn0.10,
-                                     wp0.10, mp0.10, sp0.10), 2),
+                                     wp0.10, mp0.10, sp0.10,
+                                     gf0.10, ttm0.10, hyp0.10), 2),
                  ">15" = 100*round(c(wo0.15, mo0.15, so0.15,
                                      wn0.15, mn0.15, sn0.15,
-                                     wp0.15, mp0.15, sp0.15), 2))
+                                     wp0.15, mp0.15, sp0.15,
+                                     gf0.15, ttm0.15, hyp0.15), 2))
 
 ft <- flextable(df) %>%
   theme_zebra()
@@ -427,8 +565,12 @@ read_docx() %>%
 # Now do table on relative risk scale
 df2 <- data.frame("Prior Belief" = c("Optimistic", "", "",
                                     "Neutral", "", "",
-                                    "Pessimistic", "", ""),
-                 "Strength" = rep(c("Weak", "Moderate", "Strong"), 3),
+                                    "Pessimistic", "", "",
+                                    "EB: Grandfelt",
+                                    "EB: TTM",
+                                    "EB: Hyperion"),
+                 "Strength" = c(rep(c("Weak", "Moderate", "Strong"), 3),
+                                "", "", ""),
                  "Median" = c(paste(round(wo_med_r, 2), " (",
                                     round(wo_low_r, 2), ", ",
                                     round(wo_up_r, 2), ")", sep = ""),
@@ -455,22 +597,36 @@ df2 <- data.frame("Prior Belief" = c("Optimistic", "", "",
                                     round(mp_up_r, 2), ")", sep = ""),
                               paste(round(sp_med_r, 2), " (",
                                     round(sp_low_r, 2), ", ",
-                                    round(sp_up_r, 2), ")", sep = "")),
+                                    round(sp_up_r, 2), ")", sep = ""),
+                              paste(round(gf_med_r, 2), " (",
+                                    round(gf_low_r, 2), ", ",
+                                    round(gf_up_r, 2), ")", sep = ""),
+                              paste(round(ttm_med_r, 2), " (",
+                                    round(ttm_low_r, 2), ", ",
+                                    round(ttm_up_r, 2), ")", sep = ""),
+                              paste(round(hyp_med_r, 2), " (",
+                                    round(hyp_low_r, 2), ", ",
+                                    round(hyp_up_r, 2), ")", sep = "")),
                  ">1" = 100*round(c(wo1.00, mo1.00, so1.00,
                                     wn1.00, mn1.00, sn1.00,
-                                    wp1.00, mp1.00, sp1.00), 2),
+                                    wp1.00, mp1.00, sp1.00,
+                                    gf1.00, ttm1.00, hyp1.00), 2),
                  ">1.1" = 100*round(c(wo1.10, mo1.10, so1.10,
                                       wn1.10, mn1.10, sn1.10,
-                                      wp1.10, mp1.10, sp1.10), 2),
+                                      wp1.10, mp1.10, sp1.10,
+                                      gf1.10, ttm1.10, hyp1.10), 2),
                  ">1.25" = 100*round(c(wo1.25, mo1.25, so1.25,
                                        wn1.25, mn1.25, sn1.25,
-                                       wp1.25, mp1.25, sp1.25), 2),
+                                       wp1.25, mp1.25, sp1.25,
+                                       gf1.25, ttm1.25, hyp1.25), 2),
                  ">1.5" = 100*round(c(wo1.50, mo1.50, so1.50,
                                       wn1.50, mn1.50, sn1.50,
-                                      wp1.50, mp1.50, sp1.50), 2),
+                                      wp1.50, mp1.50, sp1.50,
+                                      gf1.50, ttm1.50, hyp1.50), 2),
                  ">2" = 100*round(c(wo2.00, mo2.00, so2.00,
                                     wn2.00, mn2.00, sn2.00,
-                                    wp2.00, mp2.00, sp2.00), 2))
+                                    wp2.00, mp2.00, sp2.00,
+                                    gf2.00, ttm2.00, hyp2.00), 2))
 
 ft2 <- flextable(df2) %>%
   theme_zebra()
