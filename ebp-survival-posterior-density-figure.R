@@ -103,11 +103,11 @@ diff_hyp <- 100*(apply(pred1_hyp, 1, mean) - apply(pred0_hyp, 1, mean))
 
 #######################################################################
 # Prepare to make RD figure
-# Helper function to get approximate prior on RD scale from log(OR) scale
+# Helper function to get approximate prior on RD scale from log(RR) scale
 approxPrior <- function(num, baserisk, mean, sd) {
-  logORprior <- rnorm(num, mean, sd)
-  intermed <- exp(logORprior)*baserisk / (1 - baserisk)
-  return(100*(intermed / (1 + intermed) - baserisk))
+  logRRprior <- rnorm(num, mean, sd)
+  intermed <- exp(logRRprior)*baserisk
+  return(100*(intermed - baserisk))
 }
 
 # Make data set with densities for each of the 3 priors
@@ -376,6 +376,65 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers,
             aes(x = 2.25, y = 3, label = label))
 
 # Output figure
-pdf("survival-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
+pdf("ebp-posterior-density-RR-figure.pdf", width = 8.5, height = 6)
 fig2
 dev.off()
+
+
+##########################################################################
+# Run model diagnostics
+
+# Borrow diagnostics function from COVID Steroid 2 Trial analysis
+# MCMC diagnostics
+diag_fit <- function(fit, extra_groups = NULL, bars = TRUE) {
+  
+  # Print fit (includes Rhats and bulk and tail ESS)
+  print(summary(fit))
+  if (any(rhat(fit) > 1.01)) {
+    warning("One or more Rhats > 1.01")
+  } else {
+    message("All Rhats <= 1.01")
+  }
+  
+  #nam <- names(fit$fit)
+  #walk(nam, ~{print(mcmc_trace(fit, pars = .x))})
+  print(mcmc_trace(fit))
+  #walk(nam, ~{print(mcmc_dens_overlay(fit, pars = .x))})
+  print(mcmc_dens_overlay(fit))
+  
+  if (bars) {
+    print(pp_check(fit, nsamples = 100, type = "bars"))
+    print(pp_check(fit, nsamples = 100, type = "bars_grouped", group = "Trt"))
+  } else {
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay"))
+    print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                   group = "Trt"))
+  }
+  print(pp_check(fit, type = "stat_grouped", stat = "mean", group = "Trt"))
+  
+  if (!is.null(extra_groups)) {
+    
+    for (i in seq_along(extra_groups)) {
+      
+      if (bars) {
+        print(pp_check(fit, nsamples = 100, type = "bars_grouped",
+                       group = extra_groups[i]))
+      } else {
+        print(pp_check(fit, nsamples = 100, type = "dens_overlay_grouped",
+                       group = extra_groups[i]))
+      }
+      print(pp_check(fit, type = "stat_grouped", stat = "mean",
+                     group = extra_groups[i]))
+      
+    }
+    
+  }
+  
+  print(loo(fit, cores = 4)) # RELOO IF NECESSARY
+  invisible(fit)
+  
+}
+
+diag_fit(gf_mod)
+diag_fit(ttm_mod)
+diag_fit(hyp_mod)
