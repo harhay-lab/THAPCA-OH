@@ -197,6 +197,54 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_vline(xintercept = 1, color = "black",
              linetype = 1)
 
+# Version that looks better when not using the p-value function panels
+fig1_alt <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
+  geom_line() +
+  labs(x = "Relative Benefit", y = "Density") +
+  scale_x_continuous(expand = c(0, 0), trans = "log",
+                     labels = seq(0.5, 4, by = 0.5),
+                     breaks = seq(0.5, 4, by = 0.5)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0.5, 6.2),
+                  ylim = c(0, 1)) +
+  geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
+              show.legend = FALSE) +
+  #geom_segment(inherit.aes = FALSE,
+  #data = subset(plot_data, x > 1/1.05 & x < 1.05)[
+  #seq(1, nrow(subset(plot_data, x > 1/1.05 & x < 1.05)),
+  # 5), ],
+  #aes(x = x, y = 0, xend = x, yend = y)) +
+  geom_hline(yintercept = 0, color = "black",
+             linetype = 1) +
+  theme_classic() +
+  scale_fill_brewer(guide = "none") +
+  geom_segment(inherit.aes = FALSE,
+               data =
+                 subset(plot_data, x > 1/1.05 & x < 1.05)[
+                   c(1, 3, 6, 8), ],
+               aes(x = x, y = 0, xend = x, yend = y)) +
+  annotate("text", x = 2.7, y = 0.8, size = 3, hjust = 0,
+           label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
+                          "\n", "P(Harm) = ", round(any_harm, 2),
+                          "\n", "P(Severe Harm) = ",
+                          round(severe_harm, 2),
+                          "\n", "ROPE = ", round(rope, 2))) +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 0.843, ymax = 0.873,
+           fill = "#DEEBF7") +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 0.803, ymax = 0.833,
+           fill = "#9ECAE1") +
+  annotate("rect", xmin = 2.2, xmax = 2.4, ymin = 0.803, ymax = 0.833,
+           fill = "#3182BD") +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 0.763, ymax = 0.793,
+           fill = "#3182BD") +
+  annotate("segment", x = 2.42, xend = 2.42, y = 0.723, yend = 0.753) +
+  annotate("segment", x = 2.46, xend = 2.46, y = 0.723, yend = 0.753) +
+  annotate("segment", x = 2.50, xend = 2.50, y = 0.723, yend = 0.753) +
+  annotate("segment", x = 2.54, xend = 2.54, y = 0.723, yend = 0.753) +
+  annotate("segment", x = 2.58, xend = 2.58, y = 0.723, yend = 0.753) +
+  geom_vline(xintercept = 1, color = "black",
+             linetype = 1)
+
 #######################################################################
 # Primary outcome on RD scale
 diff <- 100*(apply(pred1, 1, mean) - apply(pred0, 1, mean))
@@ -264,6 +312,49 @@ fig2 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   annotate("segment", x = 15.25, xend = 15.25, y = 0.0585, yend = 0.0645) +
   annotate("segment", x = 15.55, xend = 15.55, y = 0.0585, yend = 0.0645) +
   annotate("segment", x = 15.85, xend = 15.85, y = 0.0585, yend = 0.0645) +
+  geom_vline(xintercept = 0, color = "black",
+             linetype = 1)
+
+# Version that looks better when not using the p-value function panels
+fig2_alt <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
+  geom_line() +
+  labs(x = "Absolute Benefit Difference (%)", y = "Density") +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = seq(-10, 20, by = 5),
+                     breaks = seq(-10, 20, by = 5)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(-13, 33),
+                  ylim = c(0, 0.095)) +
+  geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
+              show.legend = FALSE) +
+  geom_hline(yintercept = 0, color = "black",
+             linetype = 1) +
+  theme_classic() +
+  scale_fill_brewer(guide = "none") +
+  geom_segment(inherit.aes = FALSE,
+               data =
+                 subset(plot_data, x > -1 & x < 1)[
+                   c(1, 7, 21, 27), ],
+               aes(x = x, y = 0, xend = x, yend = y)) +
+  annotate("text", x = 16.5, y = 0.075, size = 3, hjust = 0,
+           label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
+                          "\n", "P(Harm) = ", round(any_harm, 2),
+                          "\n", "P(Severe Harm) < 0.01",
+                          #round(severe_harm, 2),
+                          "\n", "ROPE = ", round(rope, 2))) +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0793, ymax = 0.0823,
+           fill = "#DEEBF7") +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0753, ymax = 0.0783,
+           fill = "#9ECAE1") +
+  annotate("rect", xmin = 13.0, xmax = 14.5, ymin = 0.0753, ymax = 0.0783,
+           fill = "#3182BD") +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0713, ymax = 0.0743,
+           fill = "#3182BD") +
+  annotate("segment", x = 14.65, xend = 14.65, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 14.95, xend = 14.95, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.25, xend = 15.25, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.55, xend = 15.55, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.85, xend = 15.85, y = 0.0673, yend = 0.0703) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
@@ -349,6 +440,49 @@ fig3 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_vline(xintercept = 1, color = "black",
              linetype = 1)
 
+# Version that looks better when not using the p-value function panels
+fig3_alt <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
+  geom_line() +
+  labs(x = "Relative Benefit", y = "Density") +
+  scale_x_continuous(expand = c(0, 0), trans = "log",
+                     labels = seq(0.5, 4, by = 0.5),
+                     breaks = seq(0.5, 4, by = 0.5)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0.5, 6.2),
+                  ylim = c(0, 2)) +
+  geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
+              show.legend = FALSE) +
+  geom_hline(yintercept = 0, color = "black",
+             linetype = 1) +
+  theme_classic() +
+  scale_fill_brewer(guide = "none") +
+  geom_segment(inherit.aes = FALSE,
+               data =
+                 subset(plot_data, x > 1/1.05 & x < 1.05)[
+                   c(1, 7, 19, 25), ],
+               aes(x = x, y = 0, xend = x, yend = y)) +
+  annotate("text", x = 2.7, y = 1.6, size = 3, hjust = 0,
+           label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
+                          "\n", "P(Harm) = ", round(any_harm, 2),
+                          "\n", "P(Severe Harm) < 0.01",
+                          #round(severe_harm, 2),
+                          "\n", "ROPE = ", round(rope, 2))) +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 1.686, ymax = 1.746,
+           fill = "#DEEBF7") +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 1.606, ymax = 1.666,
+           fill = "#9ECAE1") +
+  annotate("rect", xmin = 2.2, xmax = 2.4, ymin = 1.606, ymax = 1.666,
+           fill = "#3182BD") +
+  annotate("rect", xmin = 2.4, xmax = 2.6, ymin = 1.526, ymax = 1.586,
+           fill = "#3182BD") +
+  annotate("segment", x = 2.42, xend = 2.42, y = 1.446, yend = 1.506) +
+  annotate("segment", x = 2.46, xend = 2.46, y = 1.446, yend = 1.506) +
+  annotate("segment", x = 2.50, xend = 2.50, y = 1.446, yend = 1.506) +
+  annotate("segment", x = 2.54, xend = 2.54, y = 1.446, yend = 1.506) +
+  annotate("segment", x = 2.58, xend = 2.58, y = 1.446, yend = 1.506) +
+  geom_vline(xintercept = 1, color = "black",
+             linetype = 1)
+
 #######################################################################
 # Secondary outcome on RD scale
 diff <- 100*(apply(pred1, 1, mean) - apply(pred0, 1, mean))
@@ -419,15 +553,59 @@ fig4 <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1)
 
+# Version that looks better when not using the p-value function panels
+fig4_alt <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
+  geom_line() +
+  labs(x = "Absolute Benefit Difference (%)", y = "Density") +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = seq(-10, 20, by = 5),
+                     breaks = seq(-10, 20, by = 5)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(-13, 33),
+                  ylim = c(0, 0.095)) +
+  geom_ribbon(aes(ymin=0, ymax=y, fill=factor(barriers)),
+              show.legend = FALSE) +
+  geom_hline(yintercept = 0, color = "black",
+             linetype = 1) +
+  theme_classic() +
+  scale_fill_brewer(guide = "none") +
+  geom_segment(inherit.aes = FALSE,
+               data =
+                 subset(plot_data, x > -1 & x < 1)[
+                   c(1, 6, 18, 23), ],
+               aes(x = x, y = 0, xend = x, yend = y)) +
+  annotate("text", x = 16.5, y = 0.075, size = 3, hjust = 0,
+           label = paste0("P(Benefit) = ", 1 - round(any_harm, 2),
+                          "\n", "P(Harm) = ", round(any_harm, 2),
+                          "\n", "P(Severe Harm) = ",
+                          round(severe_harm, 2),
+                          "\n", "ROPE = ", round(rope, 2))) +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0793, ymax = 0.0823,
+           fill = "#DEEBF7") +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0753, ymax = 0.0783,
+           fill = "#9ECAE1") +
+  annotate("rect", xmin = 13.0, xmax = 14.5, ymin = 0.0753, ymax = 0.0783,
+           fill = "#3182BD") +
+  annotate("rect", xmin = 14.5, xmax = 16.0, ymin = 0.0713, ymax = 0.0743,
+           fill = "#3182BD") +
+  annotate("segment", x = 14.65, xend = 14.65, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 14.95, xend = 14.95, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.25, xend = 15.25, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.55, xend = 15.55, y = 0.0673, yend = 0.0703) +
+  annotate("segment", x = 15.85, xend = 15.85, y = 0.0673, yend = 0.0703) +
+  geom_vline(xintercept = 0, color = "black",
+             linetype = 1)
 
+
+############################################################################
 # Combine figures
 
 # First do Bayesian analyses on RR scale (old version of fig)
 # Both figures exported as landscape PDFs with 6 in x 10 in dimensions
 figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
-figure <- fill_panel(figure, fig1)
-figure <- fill_panel(figure, fig3)
+figure <- fill_panel(figure, fig1_alt)
+figure <- fill_panel(figure, fig3_alt)
 
 # Output pdf of RR figure, dims may need to be changed
 pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
@@ -437,8 +615,8 @@ dev.off()
 # Then Bayesian analyses on RD scale (old version of fig)
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
-figure2 <- fill_panel(figure2, fig2)
-figure2 <- fill_panel(figure2, fig4)
+figure2 <- fill_panel(figure2, fig2_alt)
+figure2 <- fill_panel(figure2, fig4_alt)
 
 # Output pdf of RD figure, dims may need to be changed
 pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
@@ -502,7 +680,6 @@ figure4 <- fill_panel(figure4, fig4)
 pdf("pvf-flat-prior-RD-figure.pdf", width = 9.75, height = 6)
 figure4
 dev.off()
-
 
 
 ##########################################################################
