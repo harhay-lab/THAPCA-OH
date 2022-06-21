@@ -34,6 +34,10 @@ getPriorSD <- function(priormean = 0,
   
 }
 
+mod_primary_or <- glm(PrimaryEndpoint ~ Trt + AgeFactor,
+                      data = dat_primary,
+                      family = binomial(link = "logit"))
+
 
 #######################################################################
 # Analysis for the 9 pre-specified priors
@@ -43,6 +47,9 @@ getPriorSD <- function(priormean = 0,
 o_mean <- log(1.25)
 so_sd <- getPriorSD(propbelow = 0.05, belowcutoff = 0,
                     priormean = o_mean)
+ess_so <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (so_sd^2)
+
 stanvars <- stanvar(o_mean) + stanvar(so_sd)
 so_prior <- prior(normal(o_mean, so_sd), class = "b", coef = Trt)
 so_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -60,6 +67,9 @@ diff_so <- 100*(apply(pred1_so, 1, mean) - apply(pred0_so, 1, mean))
 # Moderate optimistic prior
 mo_sd <- getPriorSD(propbelow = 0.15, belowcutoff = 0,
                     priormean = o_mean)
+ess_mo <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (mo_sd^2)
+
 stanvars <- stanvar(o_mean) + stanvar(mo_sd)
 mo_prior <- prior(normal(o_mean, mo_sd), class = "b", coef = Trt)
 mo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -77,6 +87,9 @@ diff_mo <- 100*(apply(pred1_mo, 1, mean) - apply(pred0_mo, 1, mean))
 # Weak optimistic prior
 wo_sd <- getPriorSD(propbelow = 0.3, belowcutoff = 0,
                     priormean = o_mean)
+ess_wo <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (wo_sd^2)
+
 stanvars <- stanvar(o_mean) + stanvar(wo_sd)
 wo_prior <- prior(normal(o_mean, wo_sd), class = "b", coef = Trt)
 wo_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -95,6 +108,9 @@ diff_wo <- 100*(apply(pred1_wo, 1, mean) - apply(pred0_wo, 1, mean))
 # Strong neutral prior
 sn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(1/1.5),
                     priormean = 0)
+ess_sn <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (sn_sd^2)
+
 stanvars <- stanvar(sn_sd)
 sn_prior <- prior(normal(0, sn_sd), class = "b", coef = Trt)
 sn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -112,6 +128,9 @@ diff_sn <- 100*(apply(pred1_sn, 1, mean) - apply(pred0_sn, 1, mean))
 # Moderate neutral prior
 mn_sd <- getPriorSD(propbelow = 0.025, belowcutoff = log(0.5),
                     priormean = 0)
+ess_mn <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (mn_sd^2)
+
 stanvars <- stanvar(mn_sd)
 mn_prior <- prior(normal(0, mn_sd), class = "b", coef = Trt)
 mn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -128,6 +147,9 @@ diff_mn <- 100*(apply(pred1_mn, 1, mean) - apply(pred0_mn, 1, mean))
 
 # Weak neutral prior
 wn_sd <- 3
+ess_wn <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (wn_sd^2)
+
 wn_prior <- prior(normal(0, 3), class = "b", coef = Trt)
 wn_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
               prior = wn_prior, chains = 8,
@@ -145,6 +167,9 @@ diff_wn <- 100*(apply(pred1_wn, 1, mean) - apply(pred0_wn, 1, mean))
 # Strong pessimistic prior
 p_mean <- log(1/1.25)
 sp_sd <- so_sd
+ess_sp <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (sp_sd^2)
+
 stanvars <- stanvar(p_mean) + stanvar(sp_sd)
 sp_prior <- prior(normal(p_mean, sp_sd), class = "b", coef = Trt)
 sp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -161,6 +186,9 @@ diff_sp <- 100*(apply(pred1_sp, 1, mean) - apply(pred0_sp, 1, mean))
 
 # Moderate pessimistic prior
 mp_sd <- mo_sd
+ess_mp <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (mp_sd^2)
+
 stanvars <- stanvar(p_mean) + stanvar(mp_sd)
 mp_prior <- prior(normal(p_mean, mp_sd), class = "b", coef = Trt)
 mp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
@@ -177,6 +205,9 @@ diff_mp <- 100*(apply(pred1_mp, 1, mean) - apply(pred0_mp, 1, mean))
 
 # Weak pessimistic prior
 wp_sd <- wo_sd
+ess_wp <- dim(dat_primary)[1] * summary(mod_primary_or)$coefficients[2, 2]^2 /
+          (wp_sd^2)
+
 stanvars <- stanvar(p_mean) + stanvar(wp_sd)
 wp_prior <- prior(normal(p_mean, wp_sd), class = "b", coef = Trt)
 wp_mod <- brm(PrimaryEndpoint ~ Trt + AgeFactor, data = dat_primary,
