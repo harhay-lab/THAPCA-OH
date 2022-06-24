@@ -291,7 +291,7 @@ plot_data_ebp <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
 p2 <- ggplot(plot_data_ebp, aes(x = x, y = y, lty = Study)) +
   xlim(c(-1, 2)) +
   geom_line() +
-  xlab("Log(RR)") +
+  xlab("Log(RB)") +
   ylab("Density") +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1) +
