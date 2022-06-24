@@ -306,6 +306,6 @@ figure1 <- fill_panel(figure1, p1)
 figure1 <- fill_panel(figure1, p2)
 
 # Output pdf of figure, dims may need to be changed
-pdf("prior-density-figure.pdf", width = 10, height = 8)
+pdf("prior-density-figure.pdf", width = 8.5, height = 6.5)
 figure1
 dev.off()
