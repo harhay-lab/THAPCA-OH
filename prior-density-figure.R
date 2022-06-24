@@ -9,6 +9,7 @@ library(bayesplot)
 library(cowplot)
 library(brms)
 library(broom)
+library(multipanelfigure)
 library(parameters)
 library(sanon)
 #library(rstanarm)
@@ -207,7 +208,8 @@ p1 <- ggplot(plot_data, aes(x = x, y = y, lty = Strength)) +
   geom_vline(xintercept = 0, color = "black",
              linetype = 1) +
   geom_text(data = f_labels, size = 2,
-            aes(x = 1, y = 2, label = label))
+            aes(x = 1, y = 2, label = label)) +
+  theme_bw()
 
 
 # Make additional panel for evidence-based priors
@@ -292,7 +294,18 @@ p2 <- ggplot(plot_data_ebp, aes(x = x, y = y, lty = Study)) +
   xlab("Log(RR)") +
   ylab("Density") +
   geom_vline(xintercept = 0, color = "black",
-             linetype = 1)
+             linetype = 1) +
+  theme_bw()
 
 
 # Combine panels into one figure
+# Then Bayesian analyses on RD scale (first version of fig)
+figure1 <- multi_panel_figure(columns = 2, rows = 1, width = 200,
+                              height = 150)
+figure1 <- fill_panel(figure1, p1)
+figure1 <- fill_panel(figure1, p2)
+
+# Output pdf of figure, dims may need to be changed
+pdf("prior-density-figure.pdf", width = 10, height = 8)
+figure1
+dev.off()
