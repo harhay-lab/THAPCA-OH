@@ -130,7 +130,7 @@ plot_data_gf2$Distribution <- "Prior"
 plot_data_gf <- rbind(plot_data_gf, plot_data_gf2)
 plot_data_gf$barriers <- 0
 plot_data_gf$barriers[plot_data_gf$x < 0] <- 1
-plot_data_gf$EBP <- "Grandfelt"
+plot_data_gf$EBP <- "Granfeldt"
 plot_data_gf$label <- paste0("ABD = ",
                              round(median(diff_gf), 1),
                              "\n", "95% CI: (",
@@ -192,7 +192,7 @@ plot_data_hyp$label <- paste0("ABD = ",
 plot_data <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
 
 f_labels <-
-  data.frame(EBP = c("Grandfelt", "TTM", "Hyperion"),
+  data.frame(EBP = c("Granfeldt", "TTM", "Hyperion"),
              Distribution = rep("Posterior", 3),
              barriers = rep(0, 9),
              label = c(paste0("Median ABD = ",
@@ -267,7 +267,7 @@ plot_data_gf2$Distribution <- "Prior"
 plot_data_gf <- rbind(plot_data_gf, plot_data_gf2)
 plot_data_gf$barriers <- 0
 plot_data_gf$barriers[plot_data_gf$x < 1] <- 1
-plot_data_gf$EBP <- "Grandfelt"
+plot_data_gf$EBP <- "Granfeldt"
 plot_data_gf$label <- paste0("RB = ",
                              round(median(ratio_gf), 2),
                              "\n", "95% CI: (",
@@ -327,7 +327,7 @@ plot_data_hyp$label <- paste0("RB = ",
 plot_data <- rbind(plot_data_gf, plot_data_ttm, plot_data_hyp)
 
 f_labels <-
-  data.frame(EBP = c("Grandfelt", "TTM", "Hyperion"),
+  data.frame(EBP = c("Granfeldt", "TTM", "Hyperion"),
              Distribution = rep("Posterior", 3),
              barriers = rep(0, 9),
              label = c(paste0("Median RB = ",

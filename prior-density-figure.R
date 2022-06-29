@@ -248,7 +248,7 @@ temp_plot <-
   geom_density()
 p <- ggplot_build(temp_plot)
 plot_data_gf <- p$data[[1]][, c(1, 2)]
-plot_data_gf$Study <- "Grandfelt"
+plot_data_gf$Study <- "Granfeldt"
 
 # Prior using TTM and TTM2 and 50% weighting
 ttm_mean <- log(1)
