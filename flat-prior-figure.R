@@ -261,7 +261,7 @@ fl0 <- mean(diff > 0)
 fl2 <- mean(diff > 2)
 fl5 <- mean(diff > 5)
 fl10 <- mean(diff > 10)
-fl15 <- mean(diff > 15)
+fl20 <- mean(diff > 20)
 
 # Second figure panel
 temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +
@@ -498,7 +498,7 @@ fl0 <- mean(diff > 0)
 fl2 <- mean(diff > 2)
 fl5 <- mean(diff > 5)
 fl10 <- mean(diff > 10)
-fl15 <- mean(diff > 15)
+fl20 <- mean(diff > 20)
 
 # Fourth figure panel
 temp_plot <- ggplot(data.frame(diff), aes(x = diff)) +

@@ -63,7 +63,7 @@ so0.00 <- mean(diff_so > 0)
 so0.02 <- mean(diff_so > 2)
 so0.05 <- mean(diff_so > 5)
 so0.10 <- mean(diff_so > 10)
-so0.15 <- mean(diff_so > 15)
+so0.20 <- mean(diff_so > 20)
 
 so_med_r <- median(ratio_so)
 so_low_r <- quantile(ratio_so, 0.025)
@@ -98,7 +98,7 @@ mo0.00 <- mean(diff_mo > 0)
 mo0.02 <- mean(diff_mo > 2)
 mo0.05 <- mean(diff_mo > 5)
 mo0.10 <- mean(diff_mo > 10)
-mo0.15 <- mean(diff_mo > 15)
+mo0.20 <- mean(diff_mo > 20)
 
 mo_med_r <- median(ratio_mo)
 mo_low_r <- quantile(ratio_mo, 0.025)
@@ -133,7 +133,7 @@ wo0.00 <- mean(diff_wo > 0)
 wo0.02 <- mean(diff_wo > 2)
 wo0.05 <- mean(diff_wo > 5)
 wo0.10 <- mean(diff_wo > 10)
-wo0.15 <- mean(diff_wo > 15)
+wo0.20 <- mean(diff_wo > 20)
 
 wo_med_r <- median(ratio_wo)
 wo_low_r <- quantile(ratio_wo, 0.025)
@@ -169,7 +169,7 @@ sn0.00 <- mean(diff_sn > 0)
 sn0.02 <- mean(diff_sn > 2)
 sn0.05 <- mean(diff_sn > 5)
 sn0.10 <- mean(diff_sn > 10)
-sn0.15 <- mean(diff_sn > 15)
+sn0.20 <- mean(diff_sn > 20)
 
 sn_med_r <- median(ratio_sn)
 sn_low_r <- quantile(ratio_sn, 0.025)
@@ -204,7 +204,7 @@ mn0.00 <- mean(diff_mn > 0)
 mn0.02 <- mean(diff_mn > 2)
 mn0.05 <- mean(diff_mn > 5)
 mn0.10 <- mean(diff_mn > 10)
-mn0.15 <- mean(diff_mn > 15)
+mn0.20 <- mean(diff_mn > 20)
 
 mn_med_r <- median(ratio_mn)
 mn_low_r <- quantile(ratio_mn, 0.025)
@@ -237,7 +237,7 @@ wn0.00 <- mean(diff_wn > 0)
 wn0.02 <- mean(diff_wn > 2)
 wn0.05 <- mean(diff_wn > 5)
 wn0.10 <- mean(diff_wn > 10)
-wn0.15 <- mean(diff_wn > 15)
+wn0.20 <- mean(diff_wn > 20)
 
 wn_med_r <- median(ratio_wn)
 wn_low_r <- quantile(ratio_wn, 0.025)
@@ -273,7 +273,7 @@ sp0.00 <- mean(diff_sp > 0)
 sp0.02 <- mean(diff_sp > 2)
 sp0.05 <- mean(diff_sp > 5)
 sp0.10 <- mean(diff_sp > 10)
-sp0.15 <- mean(diff_sp > 15)
+sp0.20 <- mean(diff_sp > 20)
 
 sp_med_r <- median(ratio_sp)
 sp_low_r <- quantile(ratio_sp, 0.025)
@@ -307,7 +307,7 @@ mp0.00 <- mean(diff_mp > 0)
 mp0.02 <- mean(diff_mp > 2)
 mp0.05 <- mean(diff_mp > 5)
 mp0.10 <- mean(diff_mp > 10)
-mp0.15 <- mean(diff_mp > 15)
+mp0.20 <- mean(diff_mp > 20)
 
 mp_med_r <- median(ratio_mp)
 mp_low_r <- quantile(ratio_mp, 0.025)
@@ -341,7 +341,7 @@ wp0.00 <- mean(diff_wp > 0)
 wp0.02 <- mean(diff_wp > 2)
 wp0.05 <- mean(diff_wp > 5)
 wp0.10 <- mean(diff_wp > 10)
-wp0.15 <- mean(diff_wp > 15)
+wp0.20 <- mean(diff_wp > 20)
 
 wp_med_r <- median(ratio_wp)
 wp_low_r <- quantile(ratio_wp, 0.025)
@@ -400,9 +400,9 @@ df <- data.frame("Prior Belief" = c("Optimistic", "", "",
                  ">10" = 100*round(c(wo0.10, mo0.10, so0.10,
                                      wn0.10, mn0.10, sn0.10,
                                      wp0.10, mp0.10, sp0.10), 2),
-                 ">15" = 100*round(c(wo0.15, mo0.15, so0.15,
-                                     wn0.15, mn0.15, sn0.15,
-                                     wp0.15, mp0.15, sp0.15), 2))
+                 ">20" = 100*round(c(wo0.20, mo0.20, so0.20,
+                                     wn0.20, mn0.20, sn0.20,
+                                     wp0.20, mp0.20, sp0.20), 2))
 
 ft <- flextable(df) %>%
   theme_zebra()
