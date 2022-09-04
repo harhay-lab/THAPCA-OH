@@ -600,10 +600,14 @@ fig4_alt <- ggplot(plot_data, aes(x = x, y = y, group = barriers)) +
 
 # First do Bayesian analyses on RR scale (first version of fig)
 # Both figures exported as landscape PDFs with 6 in x 10 in dimensions
+# Might need to adjust label placement in adobe
 figure <- multi_panel_figure(columns = 2, rows = 1, width = 240,
                              height = 125)
-figure <- fill_panel(figure, fig1_alt)
-figure <- fill_panel(figure, fig3_alt)
+figure <- fill_panel(figure, fig1_alt,
+                     label = "A) Good neurobehavioral outcome",
+                     label_just = "bottom")
+figure <- fill_panel(figure, fig3_alt, label = "B) One-year survival",
+                     label_just = "bottom")
 
 # Output pdf of RR figure, dims may need to be changed
 pdf("flat-prior-RR-figure.pdf", width = 10, height = 6)
@@ -613,15 +617,18 @@ dev.off()
 # Then Bayesian analyses on RD scale (first version of fig)
 figure2 <- multi_panel_figure(columns = 2, rows = 1, width = 250,
                               height = 125)
-figure2 <- fill_panel(figure2, fig2_alt)
-figure2 <- fill_panel(figure2, fig4_alt)
+figure2 <- fill_panel(figure2, fig2_alt,
+                      label = "A) Good neurobehavioral outcome",
+                      label_just = "bottom")
+figure2 <- fill_panel(figure2, fig4_alt, label = "B) One-year survival",
+                      label_just = "bottom")
 
 # Output pdf of RD figure, dims may need to be changed
 pdf("flat-prior-RD-figure.pdf", width = 10, height = 6)
 figure2
 dev.off()
 
-# All RR scale analyses (second version of fig)
+# All RR scale analyses (second [old] version of fig)
 figure3 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
                               height = 125)
 figure3 <- fill_panel(figure3,
@@ -650,7 +657,7 @@ pdf("pvf-flat-prior-RR-figure.pdf", width = 9.75, height = 6)
 figure3
 dev.off()
 
-# All RD scale analyses (second version of fig)
+# All RD scale analyses (second [old] version of fig)
 figure4 <- multi_panel_figure(columns = 2, rows = 2, width = 240,
                               height = 125)
 figure4 <- fill_panel(figure4,
