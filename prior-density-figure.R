@@ -302,8 +302,8 @@ p2 <- ggplot(plot_data_ebp, aes(x = x, y = y, lty = Study)) +
 # Then Bayesian analyses on RD scale (first version of fig)
 figure1 <- multi_panel_figure(columns = 2, rows = 1, width = 200,
                               height = 150)
-figure1 <- fill_panel(figure1, p1)
 figure1 <- fill_panel(figure1, p2)
+figure1 <- fill_panel(figure1, p1)
 
 # Output pdf of figure, dims may need to be changed
 pdf("prior-density-figure.pdf", width = 8.5, height = 6.5)
